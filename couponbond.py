@@ -1,0 +1,18 @@
+import math
+class couponbond:
+    def __init__(self,principal,rate,maturity,market_interest):
+        self.principal = principal
+        self.rate = rate/100
+        self.market_interest = market_interest/100
+        self.maturity = maturity
+    def present_value(self,x,n):
+        return x*(math.exp(-self.market_interest*n))
+    def calculate_price(self):
+        price=0
+        for t in range(1,self.maturity+1):
+            price += self.present_value(self.principal*self.rate,t)
+        price += self.present_value(self.principal,self.maturity)
+        return price
+if __name__ == '__main__':
+    bond = couponbond(1000,10,3,4)
+    print(bond.calculate_price())

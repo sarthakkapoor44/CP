@@ -1,0 +1,1 @@
+{"name":"Local: uno","url":"/Users/apple/Desktop/CP/uno.cpp","tests":[{"id":1700977435648,"input":"3\n3 2\nUS\n3 3\nUSU\n3 3\nURU","output":"1\n2\n3"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"/Users/apple/Desktop/CP/uno.cpp","group":"local","local":true}

@@ -1,0 +1,1 @@
+{"name":"Local: test","url":"/Users/apple/Desktop/CP/test.py","tests":[{"id":1704737479367,"input":"","output":""},{"id":1704737512486,"input":"1\n7\nabcaaba\nacbaaab","output":""}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"/Users/apple/Desktop/CP/test.py","group":"local","local":true}
