@@ -16,7 +16,7 @@ typedef long long ll;
 #define rep(i, n) for (ll i = 0; i < n; i++)
 #define forf(i, a, b) for (ll i = a; i < b; i++)
 #define forb(i, s, e) for (ll i = s; i >= e; i--)
-#define vp vector<pair<ll, ll>>
+#define vp vector<pair<ll, ll> >
 #define v vector<ll>
 // typedef tree<int, null_type, less<int>, rb_tree_tag,
 //    tree_order_statistics_node_update> ost;
@@ -29,18 +29,31 @@ int spf[MAXN];
 void sieve();
 void sieve_of_eratosthenes();
 ll gcd(ll a, ll b);
+  ll counts[MAXN];
+   ll dp[MAXN];
 int main() {
     // Optimize input/output
     //std::ios::sync_with_stdio(false);
     //std::cin.tie(nullptr);
-    int t=1;
-    scanf("%d",&t);
-    while (t--)
+    // int t=1;
+    // scanf("%d",&t);
+    // while (t--)
     {
         ll n;
         scanf("%lld",&n);
         //Lesgooooooo!!!!
-        
+      
+
+        ll arr[n];rep(i,n){cin>>arr[i];counts[arr[i]]++;}
+       
+      
+        dp[1] =counts[1];
+        forf(i,2,MAXN){
+            dp[i] = max(dp[i-1],dp[i]);
+            dp[i] =max(dp[i-2]+counts[i]*(i),dp[i]);
+            
+        }
+    cout<<dp[MAXN-1];ce;
     }
 
     return 0;
