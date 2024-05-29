@@ -1,0 +1,1 @@
+{"name":"Local: barclay's","url":"/Users/apple/Desktop/CP/barclay's.cpp","tests":[{"id":1707994240991,"input":"3\n5 7 10\n3\n2 3 5\n15\n5","output":"3"},{"id":1707997062272,"input":"3\n5 7 10\n3\n1 7 10\n15\n5","output":"-1"}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"/Users/apple/Desktop/CP/barclay's.cpp","group":"local","local":true}

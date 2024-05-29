@@ -1,0 +1,1 @@
+{"name":"Local: C_Longest_Simple_Cycle","url":"/Users/apple/Desktop/CP/C_Longest_Simple_Cycle.cpp","tests":[{"id":1706181655933,"input":"1\n3\n2 4 4\n-1 1 2\n-1 1 4","output":""}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"/Users/apple/Desktop/CP/C_Longest_Simple_Cycle.cpp","group":"local","local":true}

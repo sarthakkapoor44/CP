@@ -2,10 +2,11 @@
 #include<bits/stdc++.h>
 using namespace std;
 //#include <ext/pb_ds/assoc_container.hpp>
-// using namespace __gnu_pbds
+// using namespace __gnu_pbds;
 typedef long long ll;
 #define fi first
 #define se second
+#define INF 1000000000000000000
 #define pb push_back
 #define mp make_pair
 #define srt(vect) sort(vect.begin(), vect.end())
@@ -18,6 +19,8 @@ typedef long long ll;
 #define forb(i, s, e) for (ll i = s; i >= e; i--)
 #define vp vector<pair<ll, ll> >
 #define v vector<ll>
+#define cin(x) scanf("%lld ",&x)
+#define cout(x) printf("%lld ",x)
 // typedef tree<int, null_type, less<int>, rb_tree_tag,
 //    tree_order_statistics_node_update> ost;
 const ll MODN = 1e9 + 7;
@@ -33,9 +36,19 @@ const ll MAXN = 1000001;
 
 //GCD
 // ll gcd(ll a, ll b);
-
+v recursion(ll n)
+{   v ans;
+    if(n==2){ans.pb(0);}
+    else if((n%2)) {
+        ans = recursion(n-1);ans.pb(*min_element(all(ans))-1);
+        }
+    else {
+        ans=  recursion(n/2);ans.pb(*max_element(all(ans))+1);
+    }
+    return ans;
+}
 int main() {
-    // Optimize input/output (remove if only using cin cout)
+    // Optimize input/output (remove if using cin cout exclusively)
     //std::ios::sync_with_stdio(false);
     //std::cin.tie(nullptr);
     
@@ -45,99 +58,11 @@ int main() {
     {   //Lesgooooooo!!!!
         ll n;
         scanf("%lld",&n);
-        stack<ll> bits;
-        ll num=0;
-        ll n_copy=n;
-        ll ones=0;
-        while(n!=0){
-         if(n%2==1){ones++;}n/=2;
-
-        }
-        n_copy+=ones-1;
-        while(n_copy!=0){
-         bits.push(n_copy%2);n_copy/=2;num++;
-
-        }
-        // cout<<num;ce;
-        stack<ll> ans;
-        ll val=1;
-       
-        while(!bits.empty()){
-            ll val1 = bits.top();
-            bits.pop();
-            if(val1){
-                forb(i,num-2,0){
-                    ans.push(val+i);
-                  
-                }
-                val=val+num;
-            }
-            
-            num--;
-        }
-        cout<<ans.size()<<" ";ce;
-        while(!ans.empty()){
-            cout<<ans.top()<<" ";
-            ans.pop();
-        }ce;
+        v ans = recursion(n);
+        cout<<ans.size();ce;
+        for(auto x:ans)cout<<x<<" ";
+        ce;
     }
 
     return 0;
 }
-
-//-----Smallest prime factor----------//
-/*
-void sieve() {
-    spf[1] = 1;
-    for (ll i = 2; i < MAXN; i++)
-        spf[i] = i;
-
-    for (ll i = 4; i < MAXN; i += 2)
-        spf[i] = 2;
-
-    for (ll i = 3; i * i < MAXN; i++) {
-        if (spf[i] == i) {
-            for (ll j = i * i; j < MAXN; j += i)
-                if (spf[j] == j)
-                    spf[j] = i;
-        }
-    }
-}
-*/
-
-
-//-----GCD----------//
-/*
-ll gcd(ll a, ll b) {
-    if (!a || !b)
-        return a | b;
-
-    unsigned shift = __builtin_ctz(a | b);
-    a >>= __builtin_ctz(a);
-
-    do {
-        b >>= __builtin_ctz(b);
-        if (a > b)
-            std::swap(a, b);
-        b -= a;
-    } while (b);
-
-    return a << shift;
-}
-*/
-
-//-----Sieve of eratosthenes----------//
-/*
-void sieve_of_eratosthenes() {
-    memset(is_prime, true, sizeof(is_prime));
-    is_prime[0] = is_prime[1] = false;
-
-    for (ll i = 2; i <= MAXN; i++) {
-        if (is_prime[i] && (long long)i * i <= MAXN) {
-            for (ll j = i * i; j <= MAXN; j += i) {
-                is_prime[j] = false;
-            }
-        }
-    }
-}
-*/

@@ -1,93 +1,37 @@
-#include <bits/stdc++.h>
-using namespace std;
-
-#define ll long long
-#define MAX_INDEX 1000001
-#define MAX_BIT 21
-#define INVALID -1
-
-// Function to process and solve each test case
-void solve() {
-    ll numElements; 
-    cin >> numElements;
-    vector<ll> elements(numElements);
-
-    // Reading elements of the array
-    for(ll i = 0; i < numElements; i++) {
-        cin >> elements[i];
-    }
-
-    // Vector to store indices for each bit position
-    vector<ll> bitIndices[MAX_BIT];
-    for(ll i = 0; i < numElements; i++) {
-        for(ll bit = 0; bit < MAX_BIT; bit++) {
-            if(elements[i] & (1 << bit)) 
-                bitIndices[bit].push_back(i + 1);
-        }
-    }
-
-    ll numQueries; 
-    cin >> numQueries;
-    while(numQueries--) {
-        ll minIndex = MAX_INDEX, lowerBound = INVALID, upperBound = MAX_INDEX;
-        ll queryIndex, queryValue; 
-        cin >> queryIndex >> queryValue;
-
-        for(ll bit = MAX_BIT - 1; bit >= 0; bit--) {
-            if (bitIndices[bit].empty()) continue;
-            
-            auto it = lower_bound(bitIndices[bit].begin(), bitIndices[bit].end(), queryIndex);
-
-            if (queryValue < (1 << bit) && lowerBound == INVALID) {
-                if (it != bitIndices[bit].end()) {
-                    minIndex = min(minIndex, *it);
-                }
-            }
-            else if (queryValue < (1 << bit)) {
-                if (it != bitIndices[bit].end()) {
-                    if (upperBound == MAX_INDEX) {
-                        upperBound = min(upperBound, *it);
-                        upperBound = max(lowerBound, upperBound);
-                    }
-                    else {
-                        ll newMinIndex = min(upperBound, *it);
-                        newMinIndex = max(lowerBound, newMinIndex);
-                        upperBound = min(upperBound, newMinIndex);
-                    }
-                }
-            }
-            else {
-                if (it != bitIndices[bit].end()) {
-                    lowerBound = max(lowerBound, *it);
-                    queryValue -= (1 << bit);
-                }
-            }
-        }
-
-        if (queryValue > 0) lowerBound = INVALID;
-
-        if (lowerBound > 0) {
-            cout << min({minIndex, lowerBound, upperBound}) << " ";
-        }
-        else if (min(minIndex, upperBound) == MAX_INDEX) {
-            cout << -1 << " ";
-        }
-        else {
-            cout << min(minIndex, upperBound) << " ";
-        }
-    }
+int check(int r,int c,int n,int m)
+{
+return (r>=0 && c>=0 && r<n && c<m);
 }
+int Solution::knight(int A, int B, int C, int D, int E, int F) {
+    int n= A;
+    int m = B;
+    pair<int,int> src ={C-1,D-1};
+    pair<int,int> target ={E-1,F-1};
+    queue<pair<int,int> > q;
+    vector<vector<int>> dist(n,vector<int>(m,INT_MAX)),vis;
+    dis[src.first][src.second]=0;
+    q.push(src);
+    vector<pair<int,int> > dir ={
+        {1,2},{2,1},{-1,2},{2,-1},{1,-2},{-2,1},{-1,-2},{-2,-1}
+    };
+    vis[src.first][src.second]=1;
+    while(!q.empty())
+    {
+        int curr_r = q.front().first;
+        int curr_c = q.front().second;
+        q.pop();
+        for(auto d:dir)
 
-int main() {
-    ios_base::sync_with_stdio(false); 
-    cin.tie(NULL); 
-    cout.tie(NULL);
-
-    ll test = 1;
-    // Uncomment the next line to read number of test cases
-    // cin >> test;
-    while(test--) {
-        solve();
+        {
+            int r = curr_r +d.first;
+            int c=  curr_c +d.second;
+            if(check(r,c,n,m) && !vis[r][c])
+            {
+                vis[r][c]=1;
+                dist[r][c] = dist[curr_r][curr_c]+1;
+                q.push({r,c});
+            }
+        }
     }
-    return 0;
+    return dist[target.first][target.second];
 }

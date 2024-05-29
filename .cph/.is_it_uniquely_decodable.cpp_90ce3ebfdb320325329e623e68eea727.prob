@@ -1,0 +1,1 @@
+{"name":"Local: is_it_uniquely_decodable","url":"/Users/apple/Desktop/CP/is_it_uniquely_decodable.cpp","tests":[{"id":1706112571378,"input":"3\naa\nab\nabab","output":"3\n2\n8"},{"id":1706114048589,"input":"1\naaa","output":""}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"/Users/apple/Desktop/CP/is_it_uniquely_decodable.cpp","group":"local","local":true}
