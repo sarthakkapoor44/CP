@@ -46,9 +46,34 @@ int main() {
     cin>>t;
     while (t--)
     {   //Lesgooooooo!!!!
-        ll n;
-        cin>>n;
-         
+        ll n,x;
+        cin>>n>>x;
+        v arr(n);
+        rep(i,n)cin>>arr[i];
+        ll  money = 0;
+        multiset<ll> chosen ;
+        rep(i,n)
+        {
+            if(money>=arr[i])
+            {
+                chosen.insert(arr[i]);
+                money-=arr[i];
+            }
+            else
+            {
+                if(chosen.size())
+                {
+                    if(*(--chosen.end())>arr[i])
+                    {
+                        money = money -arr[i]+ *(--chosen.end());
+                        chosen.erase(--(chosen.end()));
+                        chosen.insert(arr[i]);
+                    }
+                }
+            }
+            money+=x;
+        }
+        cout<<chosen.size();ce;
         
     }
 

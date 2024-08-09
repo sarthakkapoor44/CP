@@ -16,29 +16,29 @@ int main()
         edge_list.push_back({a,b,-w});
         adj[b].push_back(a);
     }
-    // sort(edge_list.begin(),edge_list.end());
+ 
     vector<ll> dist(n,INF);
     dist[0]=0;
-    vector<ll> parent(n,-1);
     vector<bool> neg_edge(n);
     for(int i=0;i<n;i++)
     {
        
         for(auto x: edge_list)
         {
-            ll a =x[0];
-            ll b= x[1];
+            ll a = x[0];
+            ll b = x[1];
             ll w = x[2];
             if(dist[a]!=INF && dist[b]>dist[a]+w)
             {
                 dist[b] = dist[a]+w;
-                if(i==n-1)
+                if(i == n-1)
                 {
                     neg_edge[b]=1;
                 }
             }
         }
     }
+    cout<<endl;
     queue<ll> q;
     q.push(n-1);
     bool flag=0;

@@ -1,5 +1,9 @@
 ///////////////////////////////////////////////////// DYNATOS ////////////////////////////////////////////////////
 #include<bits/stdc++.h>
+#pragma GCC optimize("O3,unroll-loops")
+#ifdef ONLINE_JUDGE
+#pragma GCC target("avx2,bmi,bmi2,popcnt,lzcnt")
+#endif
 using namespace std;
 //#include <ext/pb_ds/assoc_container.hpp>
 // using namespace __gnu_pbds;
@@ -18,36 +22,57 @@ typedef long long ll;
 #define forf(i, a, b) for (ll i = a; i < b; i++)
 #define forb(i, s, e) for (ll i = s; i >= e; i--)
 #define vp vector<pair<ll, ll> >
-#define v vector<ll>
+#define vll vector<ll>
+#define OPTIMIZE_IO  std::ios::sync_with_stdio(false);\
+    std::cin.tie(nullptr);
 // typedef tree<int, null_type, less<int>, rb_tree_tag,
 //    tree_order_statistics_node_update> ost;
+ 
+#ifndef ONLINE_JUDGE
+#include "debug.cpp"
+#define debug(x...)               \
+    cerr << "[" << #x << "] = ["; \
+    _print(x)
+#else
+#define debug(x...)
+#endif
+ 
 const ll MODN = 1e9 + 7;
 const ll MAXN = 1000001;
 const ll modn = 998244353;
-
-// for sieve of eratosthenes
-// bool is_prime[MAXN];
-//void sieve_of_eratosthenes();
-
-// for spf
-// int spf[MAXN]; 
-// void sieve();
-
-//GCD
-// ll gcd(ll a, ll b);
-
-int main() {
-    // Optimize input/output (remove if using cin cout exclusively)
-    std::ios::sync_with_stdio(false);
-    std::cin.tie(nullptr);
-    
  
-    {   //Lesgooooooo!!!!
+template <typename T>
+void out(vector<T> a)
+{
+    for (int i = 0; i < (int)a.size(); i++)
+    {
+        cout << a[i] << " ";
+    }
+    ce;
+}
+ 
+int main() {
+    // FOR GCD - gcd snip
+    // FOR SIEVE OF ERATOSTHENES - erat_snip;
+    // FOR SPF - spf_snip
+    // FOR BINARY_EXPONENTATION - binpow_snip
+    OPTIMIZE_IO // Optimize input/output (remove if using scanf and printf)
+ 
+   
+    {	//Lesgooooooo!!!!
         ll n;
         cin>>n;
-        ll arr[n];rep(i,n)cin>>arr[i];
-         
-        
+        vll arr(n);
+        rep(i,n)cin>>arr[i];
+        vll lis(n,INF);
+        ll ans = 0;
+        rep(i,n)
+        {
+            auto x = lower_bound(lis.begin(),lis.end(),arr[i]) - lis.begin();
+            lis[x] = arr[i];
+            ans = max(ans,ll(x+1));
+        } 
+        cout<<ans;ce;
     }
 
     return 0;

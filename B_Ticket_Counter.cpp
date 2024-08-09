@@ -1,5 +1,7 @@
 ///////////////////////////////////////////////////// DYNATOS ////////////////////////////////////////////////////
 #include<bits/stdc++.h>
+#pragma GCC optimize("O3,unroll-loops")
+#pragma GCC target("avx2,bmi,bmi2,popcnt,lzcnt")
 using namespace std;
 //#include <ext/pb_ds/assoc_container.hpp>
 // using namespace __gnu_pbds;
@@ -18,54 +20,55 @@ typedef long long ll;
 #define forf(i, a, b) for (ll i = a; i < b; i++)
 #define forb(i, s, e) for (ll i = s; i >= e; i--)
 #define vp vector<pair<ll, ll> >
-#define v vector<ll>
+#define vll vector<ll>
+#define OPTIMIZE_IO  std::ios::sync_with_stdio(false);\
+    std::cin.tie(nullptr);
 // typedef tree<int, null_type, less<int>, rb_tree_tag,
 //    tree_order_statistics_node_update> ost;
+ 
+#ifndef ONLINE_JUDGE
+#include "debug.cpp"
+#define debug(x...)               \
+    cerr << "[" << #x << "] = ["; \
+    _print(x)
+#else
+#define debug(x...)
+#endif
+ 
 const ll MODN = 1e9 + 7;
 const ll MAXN = 1000001;
 const ll modn = 998244353;
-
-// for sieve of eratosthenes
-// bool is_prime[MAXN];
-//void sieve_of_eratosthenes();
-
-// for spf
-// int spf[MAXN]; 
-// void sieve();
-
-//GCD
-// ll gcd(ll a, ll b);
-
+ 
+template <typename T>
+void out(vector<T> a)
+{
+    for (int i = 0; i < (int)a.size(); i++)
+    {
+        cout << a[i] << " ";
+    }
+    ce;
+}
+ 
 int main() {
-    // Optimize input/output (remove if using cin cout exclusively)
-    // gcd_snip //spf_snip // erat_snip
-    std::ios::sync_with_stdio(false);
-    std::cin.tie(nullptr);
-    
-    int t=1;
-    cin>>t;
-    while (t--)
-    {   //Lesgooooooo!!!!
-        ll n;
-        cin>>n;
-        ll arr[n];
-        map<ll,ll> times; 
-        ll sum  =n;
-        rep(i,n){cin>>arr[i];times[arr[i]]++;}
-        ll time  =0;
-        cout<<sum<<" ";
+    // FOR GCD - gcd snip
+    // FOR SIEVE OF ERATOSTHENES - erat_snip;
+    // FOR SPF - spf_snip
+    // FOR BINARY_EXPONENTATION - binpow_snip
+    OPTIMIZE_IO // Optimize input/output (remove if using scanf and printf)
+ 
+
+
+    {	//Lesgooooooo!!!!
+        ll n,a;
+        cin>>n>>a;
+        vll arr(n);rep(i,n)cin>>arr[i];
+        ll sum  =0;
         rep(i,n)
         {
-            if(times[arr[i]]){
-            time++;
-            if(arr[i]>time){sum--;times[arr[i]]--;}
-            sum-=times[time];
-            if(sum<=0){cout<<0;break;}
-            times[time]=0;
-            cout<<sum<<" ";
-            }
+            sum = max(sum,arr[i])+a;
+            cout<<sum;ce;
         }
-        ce;
+            
     }
 
     return 0;

@@ -1,93 +1,93 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <unordered_map>
+
 using namespace std;
 
-#define ll long long
-#define MAX_INDEX 1000001
-#define MAX_BIT 21
-#define INVALID -1
+const long long MOD = 1e9 + 7;
+const int BASE = 31;
 
-// Function to process and solve each test case
-void solve() {
-    ll numElements; 
-    cin >> numElements;
-    vector<ll> elements(numElements);
+vector<int> break_string(int T, vector<string> &test_cases) {
+    vector<int> results;
 
-    // Reading elements of the array
-    for(ll i = 0; i < numElements; i++) {
-        cin >> elements[i];
+    for (const string &S : test_cases) {
+        int n = S.length();
+        vector<long long> prefix_hash(n + 1, 0);
+        vector<long long> suffix_hash(n + 1, 0);
+        vector<long long> power(n + 1, 1);
+
+        // Precompute powers of the base
+        for (int i = 1; i <= n; ++i) {
+            power[i] = (power[i - 1] * BASE) % MOD;
+        }
+
+        // Compute prefix hashes
+        for (int i = 0; i < n; ++i) {
+            prefix_hash[i + 1] = (prefix_hash[i] * BASE + (S[i] - 'a' + 1)) % MOD;
+        }
+
+        // Compute suffix hashes
+        for (int i = n - 1; i >= 0; --i) {
+            suffix_hash[i] = (suffix_hash[i + 1] * BASE + (S[i] - 'a' + 1)) % MOD;
+        }
+
+        int ways = 0;
+
+        // Check all possible split points
+        for (int i = 0; i <= n; ++i) {
+            // Check if the prefix can be divided into two equal parts
+            bool valid_prefix = false;
+            if (i % 2 == 0) {
+                int mid = i / 2;
+                long long left_prefix_hash = prefix_hash[mid];
+                long long right_prefix_hash = (prefix_hash[i] - (prefix_hash[mid] * power[mid] % MOD) + MOD) % MOD;
+                if (left_prefix_hash == right_prefix_hash) {
+                    valid_prefix = true;
+                }
+            } else if (i == 0) {
+                valid_prefix = true; // Empty prefix
+            }
+
+            // Check if the suffix can be divided into two equal parts
+            bool valid_suffix = false;
+            int remaining_length = n - i;
+            if (remaining_length % 2 == 0) {
+                int suffix_mid = i + remaining_length / 2;
+                long long left_suffix_hash = (suffix_hash[i] - (suffix_hash[suffix_mid] * power[remaining_length / 2] % MOD) + MOD) % MOD;
+                long long right_suffix_hash = suffix_hash[suffix_mid];
+                if (left_suffix_hash == right_suffix_hash) {
+                    valid_suffix = true;
+                }
+            } else if (remaining_length == 0) {
+                valid_suffix = true; // Empty suffix
+            }
+
+            if (valid_prefix && valid_suffix) {
+                ways++;
+            }
+        }
+
+        results.push_back(ways % MOD);
     }
 
-    // Vector to store indices for each bit position
-    vector<ll> bitIndices[MAX_BIT];
-    for(ll i = 0; i < numElements; i++) {
-        for(ll bit = 0; bit < MAX_BIT; bit++) {
-            if(elements[i] & (1 << bit)) 
-                bitIndices[bit].push_back(i + 1);
-        }
-    }
-
-    ll numQueries; 
-    cin >> numQueries;
-    while(numQueries--) {
-        ll minIndex = MAX_INDEX, lowerBound = INVALID, upperBound = MAX_INDEX;
-        ll queryIndex, queryValue; 
-        cin >> queryIndex >> queryValue;
-
-        for(ll bit = MAX_BIT - 1; bit >= 0; bit--) {
-            if (bitIndices[bit].empty()) continue;
-            
-            auto it = lower_bound(bitIndices[bit].begin(), bitIndices[bit].end(), queryIndex);
-
-            if (queryValue < (1 << bit) && lowerBound == INVALID) {
-                if (it != bitIndices[bit].end()) {
-                    minIndex = min(minIndex, *it);
-                }
-            }
-            else if (queryValue < (1 << bit)) {
-                if (it != bitIndices[bit].end()) {
-                    if (upperBound == MAX_INDEX) {
-                        upperBound = min(upperBound, *it);
-                        upperBound = max(lowerBound, upperBound);
-                    }
-                    else {
-                        ll newMinIndex = min(upperBound, *it);
-                        newMinIndex = max(lowerBound, newMinIndex);
-                        upperBound = min(upperBound, newMinIndex);
-                    }
-                }
-            }
-            else {
-                if (it != bitIndices[bit].end()) {
-                    lowerBound = max(lowerBound, *it);
-                    queryValue -= (1 << bit);
-                }
-            }
-        }
-
-        if (queryValue > 0) lowerBound = INVALID;
-
-        if (lowerBound > 0) {
-            cout << min({minIndex, lowerBound, upperBound}) << " ";
-        }
-        else if (min(minIndex, upperBound) == MAX_INDEX) {
-            cout << -1 << " ";
-        }
-        else {
-            cout << min(minIndex, upperBound) << " ";
-        }
-    }
+    return results;
 }
 
 int main() {
-    ios_base::sync_with_stdio(false); 
-    cin.tie(NULL); 
-    cout.tie(NULL);
+    int T;
+    cin >> T;
+    vector<string> test_cases(T);
 
-    ll test = 1;
-    // Uncomment the next line to read number of test cases
-    // cin >> test;
-    while(test--) {
-        solve();
+    for (int i = 0; i < T; ++i) {
+        cin >> test_cases[i];
     }
+
+    vector<int> results = break_string(T, test_cases);
+
+    for (int result : results) {
+        cout << result << endl;
+    }
+
     return 0;
 }

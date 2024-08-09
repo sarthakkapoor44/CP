@@ -1,54 +1,71 @@
-#include<bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <string>
 using namespace std;
-typedef long long ll;
-vector<vector<pair<ll,ll> > > adj;
-map<ll,ll> freq1,freq2;
-ll ans  =0;
-const ll MODN = 1e9+7;
-void dfs(int pos,int parent)
-{
 
-    for(auto x:adj[pos])
-    {
-        if(x.first==parent)continue;
-        if(!(freq1.count(x.second))){freq1[x.second]++;freq2[x.second]++;}
-        else
-        {
-            freq2[x.second]++;
-            freq1.erase(x.second);
-        }
-        (ans+=(freq1.size())%MODN)%=MODN;
-        dfs(x.first,pos);
-        if(freq2[x.second]-1 == 1)
-        {
-            freq1[x.second]++;
-            freq2[x.second]--;
-        }
-        else if(!(freq2[x.second]-1))
-        {
-            freq2.erase(x.second);
-            freq1.erase(x.second);
-        }
-        else {freq2[x.second]--;}
-    }
+const int MOD = 1000000007;
+
+// Function to check if James wins
+bool jamesWins(char james, char lily) {
+    return (james == 'R' && lily == 'S') ||
+           (james == 'P' && lily == 'R') ||
+           (james == 'S' && lily == 'P');
 }
-int main()
-{
-    int n;cin>>n;
-    adj.clear();
-    adj.resize(n);
-    for(int i=0;i<n-1;i++)
-    {
-        ll a,b,w;cin>>a>>b>>w;
-        adj[a-1].push_back(make_pair(b-1,w));
-        adj[b-1].push_back(make_pair(a-1,w));
+
+// Memoization map to store the results of subproblems
+unordered_map<string, int> memo;
+
+// Function to generate sequences and count the number of winning sequences
+int generateSequences(const string& lily, int index, char lastSign, string& current) {
+    if (index == lily.size()) {
+        int jamesScore = 0;
+        int lilyScore = 0;
+        for (int i = 0; i < lily.size(); ++i) {
+            if (jamesWins(current[i], lily[i])) {
+                jamesScore++;
+            } else if (jamesWins(lily[i], current[i])) {
+                lilyScore++;
+            }
+        }
+        return (jamesScore > lilyScore) ? 1 : 0;
     }
-    for(int i=0;i<n;i++)
-    {   
-        freq1.clear();
-        freq2.clear();
-        dfs(i,-1);
-        cout<<endl;
+    
+    string memoKey = to_string(index) + lastSign + current;
+    if (memo.find(memoKey) != memo.end()) {
+        return memo[memoKey];
     }
-    cout<<(ans/2);
+
+    int count = 0;
+    for (char sign : {'R', 'P', 'S'}) {
+        if (sign != lastSign) {
+            current.push_back(sign);
+            count = (count + generateSequences(lily, index + 1, sign, current)) % MOD;
+            current.pop_back();
+        }
+    }
+    
+    memo[memoKey] = count;
+    return count;
+}
+
+int count_winning_sequences(int N, const string &input2) {
+    string current;
+    return generateSequences(input2, 0, '\0', current);
+}
+
+int main() {
+    int N;
+    string input2;
+
+    // Example usage
+    N = 3;
+    input2 = "RPS";
+    cout << count_winning_sequences(N, input2) << endl;  // Output should be 4
+    
+    N = 2;
+    input2 = "RR";
+    cout << count_winning_sequences(N, input2) << endl;  // Output should be 2
+    
+    return 0;
 }
