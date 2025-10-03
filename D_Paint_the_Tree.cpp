@@ -1,5 +1,9 @@
 ///////////////////////////////////////////////////// DYNATOS ////////////////////////////////////////////////////
 #include<bits/stdc++.h>
+#pragma GCC optimize("O3,unroll-loops")
+#ifdef ONLINE_JUDGE
+#pragma GCC target("avx2,bmi,bmi2,popcnt,lzcnt")
+#endif
 using namespace std;
 //#include <ext/pb_ds/assoc_container.hpp>
 // using namespace __gnu_pbds;
@@ -12,144 +16,123 @@ typedef long long ll;
 #define srt(vect) sort(vect.begin(), vect.end())
 #define ce cout<<endl
 #define all(s) s.begin(), s.end()
-#define pyes cout<<"YES";
-#define pno cout<<"NO";
+#define pyes cout<<"YES"
+#define pno cout<<"NO"
 #define rep(i, n) for (ll i = 0; i < n; i++)
 #define forf(i, a, b) for (ll i = a; i < b; i++)
 #define forb(i, s, e) for (ll i = s; i >= e; i--)
 #define vp vector<pair<ll, ll> >
-#define v vector<ll>
+#define vll vector<ll>
+#define OPTIMIZE_IO  std::ios::sync_with_stdio(false);\
+    std::cin.tie(nullptr);
 // typedef tree<int, null_type, less<int>, rb_tree_tag,
 //    tree_order_statistics_node_update> ost;
+ 
+#ifndef ONLINE_JUDGE
+#include "debug.cpp"
+#define debug(x...)               \
+    cerr << "[" << #x << "] = ["; \
+    _print(x)
+#else
+#define debug(x...)
+#endif
+ 
 const ll MODN = 1e9 + 7;
 const ll MAXN = 1000001;
 const ll modn = 998244353;
-
-// for sieve of eratosthenes
-// bool is_prime[MAXN];
-//void sieve_of_eratosthenes();
-
-// for spf
-// int spf[MAXN]; 
-// void sieve();
-
-//GCD
-// ll gcd(ll a, ll b);
-
-vector<vector<ll> > adj;
-// const int N =2*1e5;
-vector<ll >dp1,dp2;
-// dp1 child 
-// dp2 parent 
-void dfs(ll pos,ll parent)
-{
-    dp1[pos]=0;
-    for(auto x:adj[pos])
-    {   
-        if(x==parent)continue;
-        dfs(x,pos);
-        dp1[pos] =max(dp1[x]+1,dp1[pos]);
-    }
-    return;
  
-}
-void dfs2(ll pos,ll parent)
+template <typename T>
+void out(vector<T> a)
 {
-    ll mxfi =-INF,mxse=-INF;
-    for(auto x:adj[pos])
+    for (int i = 0; i < (int)a.size(); i++)
     {
-        if(x==parent)continue;
-        if(dp1[x]>mxfi){mxse=mxfi;mxfi=dp1[x];}
-        else if(dp1[x]>mxse){mxse = dp1[x];}
+        cout << a[i] << " ";
     }
-    // cout<<pos<<" "<<mxfi<<" "<<mxse;ce;
-    for(auto x:adj[pos])
-    {
-        if(x==parent)continue;
-        dp2[x] =dp2[pos]+1;
-        if(mxfi!=dp1[x])
-        {
-            dp2[x] =  max(1+dp2[pos],2+mxfi);
-        }
-        else if(mxse!=-INF)
-        {
-            dp2[x] = max(1+dp2[pos],2+mxse);
-        }
-        dfs2(x,pos);
-    }
-
+    ce;
 }
-
+ 
 int main() {
-    // Optimize input/output (remove if using cin cout exclusively)
-    // gcd_snip //spf_snip // erat_snip
-    std::ios::sync_with_stdio(false);
-    std::cin.tie(nullptr);
-    
-    int t=1;
-    cin>>t;
-    while (t--)
-    {   //Lesgooooooo!!!!
+    // FOR GCD - gcd snip
+    // FOR SIEVE OF ERATOSTHENES - erat_snip;
+    // FOR SPF - spf_snip
+    // FOR BINARY_EXPONENTATION - binpow_snip
+    // FOR SEGMENT_TREE - seg_snip
+    OPTIMIZE_IO // Optimize input/output (remove if using scanf and printf)
+ 
+    // int t=1;
+    // cin>>t;
+    // while (t--)
+    {	//Lesgooooooo!!!!
         ll n;
         cin>>n;
-        ll a,b;
-        cin>>a>>b;
-        a--;b--;
-        adj.clear();
-        adj.resize(n);
+        vector<vector<ll>> arr(3,vll(n));
+        rep(i,3){rep(j,n)cin>>arr[i][j];}
+        vector<vll> adj(n);
+        ll cq =1;
+        ll start=0;
         rep(i,n-1)
         {
-            ll x,y;
-            cin>>x>>y;
-            adj[x-1].pb(y-1);
-            adj[y-1].pb(x-1);
-        }
-  
-        dp1.clear();
-        dp2.clear();
-        dp1.resize(n);
-        dp2.resize(n); 
-        dfs(a,-1);
-        dfs2(a,-1);
-        queue<ll> q;
-        q.push(a);
-        vector<ll>path(n),vis(n,0);
-        vis[a]=1;
-        bool flag =0;
-        while(!q.empty())
-        {
-            ll num = q.front();
-            q.pop();
-            for(auto x:adj[num])
-            {
-                if(!vis[x])
-                {
-                    vis[x]=  1;
-                    path[x]=num;
-                    if(x==b){flag=1;break;}
-                    q.push(x);
-                }
-            }
-            if(flag)break;
-        }
-        ll mx_d =0;
-        ll tot_dist = -1;
-        ll dist =-1;
-        for(ll i=b;;i=path[i])
-        {   
-            tot_dist++;
-            if(i==a)break;
-        }
-        ll ans =INF;
-        for(ll i=b;;i=path[i])
-        {   
+            ll u,v;
+            cin>>u>>v;
+            u--;v--;
+            adj[u].pb(v);
+            adj[v].pb(u);
+            if(adj[u].size()>2)cq=0;
+            if(adj[v].size()>2)cq=0;
             
-            dist++;
-            mx_d= max(dp1[i],dp2[i]);
-            ans = min(ans,(tot_dist-dist)%2+tot_dist-mx_d+2*(n-1));
-            if(i==a)break;
         }
-        cout<<ans;ce;
+        rep(i,n)
+        {
+            if(adj[i].size()==1)
+            {
+                start = i;break;
+            }
+        }
+        ll mn = INF;
+        vll assign(n);
+        vector<ll> perm = {0,1,2};
+        function<void(ll ,ll,queue<ll>,ll&)> dfs = [&](ll pos,ll par,queue<ll> q,ll &cost)->void{
+    
+            if(q.size()<3)
+            {
+                q.push(perm[q.size()]);
+                // assign[pos] = perm[q.size()]+1;
+            }
+            else
+            {
+                ll val= q.front();
+                q.pop();
+                q.push(val);
+                // assign[pos] = val+1;
+            }
+            cost+= arr[q.back()][pos];
+            assign[pos] = q.back()+1;
+            for(auto x:adj[pos]){
+                if(x==par)continue;
+                dfs(x,pos,q,cost);
+            }
+        };
+        queue<ll> qu;
+        vll final(n);
+        do
+        {
+            ll cost = 0;
+            dfs(start,-1,qu,cost);
+            if(cost<mn)
+            {
+                mn= cost;
+                final =assign;
+            }
+        }while(next_permutation(all(perm)));
+        if(cq)
+        {
+            cout<<mn;ce;
+            out(final);
+        }
+        else 
+        {
+            cout<<-1;ce;
+        }
     }
 
     return 0;

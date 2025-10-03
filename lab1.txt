@@ -1,0 +1,2055 @@
+10. Write a program to check if a string contains another string. The program takes
+two strings as inputs and returns the index where the second string is found. If the
+second string cannot be found, then return -1.
+Ex:
+str1: Hello
+str2: llo
+Output: 2
+
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    char str1[100], str2[100];
+    
+    printf("Enter str1: ");
+    scanf("%s", str1);
+    
+    printf("Enter str2: ");
+    scanf("%s", str2);
+    
+    // Use the standard library function 'strstr' to find the substring.
+    char *pos = strstr(str1, str2);
+    
+    if (pos == NULL) {
+        // If not found, print -1
+        printf("-1\n");
+    } else {
+        // If found, calculate the index using pointer arithmetic
+        printf("%ld\n", pos - str1);
+    }
+    
+    return 0;
+}
+
+#include <stdio.h>
+
+int main() {
+    char str1[100], str2[100];
+    int i, j, startIndex = -1;
+    
+    printf("Enter str1: ");
+    scanf("%s", str1);
+    
+    printf("Enter str2: ");
+    scanf("%s", str2);
+    
+    // Loop through str1
+    for (i = 0; str1[i] != '\0'; i++) {
+        // If first character matches, check the rest
+        if (str1[i] == str2[0]) {
+            startIndex = i;  // Potential start index
+            for (j = 0; str2[j] != '\0'; j++) {
+                // Break if mismatch
+                if (str1[i + j] != str2[j]) {
+                    startIndex = -1; 
+                    break; 
+                }
+            }
+            // If we finished matching str2, break out of outer loop
+            if (str2[j] == '\0') {
+                break;
+            }
+        }
+    }
+    
+    printf("%d\n", startIndex);
+    return 0;
+}
+
+nasm -f elf64 substring_search.asm -o substring_search.o
+ld substring_search.o -o substring_search
+./substring_search
+
+
+; ----------------------------------------------------------------------------
+; NASM Assembly (64-bit, Linux)
+; 
+; Program:
+;   1) Prompt user for str1 and str2.
+;   2) Find the first occurrence of str2 in str1.
+;   3) Print the index or -1 if not found.
+;
+; How to build and run:
+;   nasm -f elf64 substring_search.asm -o substring_search.o
+;   ld substring_search.o -o substring_search
+;   ./substring_search
+; ----------------------------------------------------------------------------
+
+SECTION .data
+    prompt_str1     db  "Enter str1: ", 0
+    prompt_str1_len equ  $ - prompt_str1
+
+    prompt_str2     db  "Enter str2: ", 0
+    prompt_str2_len equ  $ - prompt_str2
+
+    found_msg       db  "Found at index: ", 0
+    found_msg_len   equ  $ - found_msg
+
+    not_found_msg   db  "Index: -1", 10, 0  ; 10 = newline
+    not_found_len   equ  $ - not_found_msg
+
+    newline         db  10, 0              ; Just "\n"
+    newline_len     equ  $ - newline
+
+SECTION .bss
+    str1            resb  256       ; buffer for first string
+    str2            resb  256       ; buffer for second string
+    str1_len        resb  1         ; will store length of str1 (not strictly needed, but convenient)
+    str2_len        resb  1         ; will store length of str2
+    int_buffer      resb  20        ; buffer to hold the ASCII of the index (e.g., up to 20 digits)
+
+SECTION .text
+    global _start
+
+; ----------------------------------------------------------------------------
+; _start
+; ----------------------------------------------------------------------------
+_start:
+
+    ; 1) Prompt for str1
+    mov   rdi, prompt_str1
+    mov   rsi, prompt_str1_len
+    call  print_string           ; print "Enter str1: "
+    
+    mov   rdi, str1              ; buffer
+    mov   rsi, 256               ; max length
+    call  read_line              ; read line, length returned in rax
+    mov   [str1_len], rax        ; store length of str1 in memory
+
+    ; 2) Prompt for str2
+    mov   rdi, prompt_str2
+    mov   rsi, prompt_str2_len
+    call  print_string           ; print "Enter str2: "
+    
+    mov   rdi, str2
+    mov   rsi, 256
+    call  read_line              ; read line, length returned in rax
+    mov   [str2_len], rax        ; store length of str2
+
+    ; 3) Call find_substring(str1, str2, len1, len2)
+    ;    According to the Linux x86-64 ABI, we pass parameters in registers:
+    ;    rdi, rsi, rdx, rcx, r8, r9...
+    
+    mov   rdi, str1              ; pointer to str1
+    mov   rsi, str2              ; pointer to str2
+    mov   eax, [str1_len]        ; load len1 from memory into eax
+    mov   edx, eax               ; place len1 in edx (32-bit is enough)
+    mov   eax, [str2_len]        ; load len2
+    mov   ecx, eax               ; place len2 in ecx
+    call  find_substring         ; rax will contain index or -1
+
+    ; 4) Check result in rax
+    cmp   rax, -1
+    je    not_found
+    
+found_label:
+    ; Print "Found at index: "
+    mov   rdi, found_msg
+    mov   rsi, found_msg_len
+    call  print_string
+
+    ; Convert rax to decimal ASCII and print
+    mov   rdi, rax
+    mov   rsi, int_buffer        ; buffer for ASCII representation
+    call  int_to_ascii           ; will put null-terminated decimal string in int_buffer
+
+    ; print the decimal string
+    mov   rdi, int_buffer
+    ; compute length of the string we just wrote
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, int_buffer
+    call  print_string
+
+    ; print newline
+    mov   rdi, newline
+    mov   rsi, newline_len
+    call  print_string
+
+    jmp   exit_program
+
+not_found:
+    mov   rdi, not_found_msg
+    mov   rsi, not_found_len
+    call  print_string
+    jmp   exit_program
+
+; ----------------------------------------------------------------------------
+; exit_program: use Linux syscall exit(0)
+; ----------------------------------------------------------------------------
+exit_program:
+    mov   rax, 60        ; sys_exit
+    xor   rdi, rdi       ; return code 0
+    syscall
+
+; ----------------------------------------------------------------------------
+; print_string:
+;   rdi = pointer to string
+;   rsi = length of string
+; ----------------------------------------------------------------------------
+print_string:
+    mov   rax, 1         ; SYS_write
+    mov   rdi, 1         ; file descriptor = stdout
+    ; rsi, rdx must be set up by caller:
+    ;   rsi = address of string, 
+    ;   rdx = length of string
+    syscall
+    ret
+
+; ----------------------------------------------------------------------------
+; read_line:
+;   Reads a line from stdin (up to rsi bytes - 1) into buffer rdi.
+;   Removes trailing newline if found.
+;   Returns (in rax) the length of the resulting string (not counting null).
+; ----------------------------------------------------------------------------
+read_line:
+    ; Use SYS_read(0, buffer, rsi)
+    mov   rax, 0         ; SYS_read
+    mov   rdi, 0         ; file descriptor = stdin
+    ; rsi: address of buffer was already in rdi before call,
+    ; but we have to be careful about registers now.
+
+    ; Save function parameters:
+    push  rbx            ; we'll need an extra register
+    mov   rbx, rdi       ; store original buffer pointer in rbx
+    mov   rcx, rsi       ; store original buffer size in rcx
+
+    mov   rdi, 0         ; stdin
+    mov   rsi, rbx       ; buffer
+    mov   rdx, rcx       ; size
+    syscall
+
+    ; Return value (number of bytes read) is in rax
+    cmp   rax, 0
+    jle   .done          ; if <= 0, no data read
+
+    ; rax = actual number of bytes read
+    mov   r8, rax        ; keep a copy
+    ; zero-terminate
+    sub   r8, 1
+    js    .done          ; if read only 0 or 1 bytes, skip
+    
+    ; check if last char is newline
+    mov   r9, rbx
+    add   r9, r8         ; address of last character
+    cmp   byte [r9], 10  ; 10 = '\n'
+    jne   .no_newline
+    mov   byte [r9], 0   ; replace newline with null terminator
+    dec   r8             ; effectively reduce length by 1
+    jmp   .done
+
+.no_newline:
+    ; if there's no newline, add a null terminator at the end (if space)
+    mov   rax, rcx       ; max buffer size
+    dec   rax            ; last valid index for storing null
+    cmp   r8, rax
+    jge   .done
+    ; safe to write a null terminator
+    mov   r9, rbx
+    add   r9, r8
+    mov   byte [r9], 0
+
+.done:
+    ; r8 holds the length (minus newline if removed)
+    mov   rax, r8        ; function return
+    pop   rbx
+    ret
+
+; ----------------------------------------------------------------------------
+; c_strlen:
+;   rdi = pointer to a null-terminated string
+;   returns length in rax
+; ----------------------------------------------------------------------------
+c_strlen:
+    xor   rax, rax
+.str_loop:
+    cmp   byte [rdi + rax], 0
+    je    .str_done
+    inc   rax
+    jmp   .str_loop
+.str_done:
+    ret
+
+; ----------------------------------------------------------------------------
+; find_substring:
+;   Naive search for the first occurrence of (rsi) in (rdi).
+;   Parameters:
+;     rdi -> pointer to str1
+;     rsi -> pointer to str2
+;     rdx -> length of str1
+;     rcx -> length of str2
+;   Return (in rax): 0-based index of first occurrence, or -1 if not found
+; ----------------------------------------------------------------------------
+find_substring:
+    push  rbx
+    push  r12
+    push  r13
+    push  r14
+    push  r15
+
+    ; Let str1 = rdi, str2 = rsi
+    ; len1 = rdx, len2 = rcx
+
+    cmp   rcx, 1
+    jl    .not_found   ; if str2 length < 1, automatically fail (or consider index=0 if empty)
+    
+    ; for i in [0 .. len1 - len2]
+    xor   rax, rax       ; i = 0 -> rax
+.outer_loop:
+    cmp   rax, rdx       ; i >= len1 ?
+    jae   .not_found     ; if i >= len1, no match
+    ; check if there's enough room left for str2
+    mov   r8, rdx
+    sub   r8, rax
+    cmp   r8, rcx
+    jl    .not_found     ; not enough room left
+    
+    ; now compare str1[i .. i+len2-1] with str2[0..len2-1]
+    xor   r9, r9         ; j = 0
+.inner_loop:
+    cmp   r9, rcx        ; j == len2 ?
+    je    .found         ; matched full length
+    ; compare str1[i + j], str2[j]
+    mov   r10, rdi
+    add   r10, rax
+    add   r10, r9
+    mov   r11, rsi
+    add   r11, r9
+    mov   bl, [r10]
+    mov   bh, [r11]
+    cmp   bl, bh
+    jne   .no_match
+    inc   r9
+    jmp   .inner_loop
+
+.no_match:
+    inc   rax            ; i++
+    jmp   .outer_loop
+
+.found:
+    ; rax holds the starting index
+    pop   r15
+    pop   r14
+    pop   r13
+    pop   r12
+    pop   rbx
+    ret
+
+.not_found:
+    mov   rax, -1
+    pop   r15
+    pop   r14
+    pop   r13
+    pop   r12
+    pop   rbx
+    ret
+
+; ----------------------------------------------------------------------------
+; int_to_ascii:
+;   Convert signed integer in rdi to a null-terminated decimal string at [rsi].
+;   (We only handle non-negative here if you want. For negative we could add code.)
+;   Returns nothing; the result is in [rsi].
+; ----------------------------------------------------------------------------
+int_to_ascii:
+    push  rbx
+    push  rbp
+    push  r12
+    push  r13
+    push  r14
+    push  r15
+
+    mov   rax, rdi        ; the number to convert
+    mov   rbx, rsi        ; buffer pointer
+    xor   rcx, rcx
+    xor   rdx, rdx
+    cmp   rax, 0
+    jne   .convert
+    ; if rax == 0, just store "0\0"
+    mov   byte [rbx], '0'
+    mov   byte [rbx+1], 0
+    jmp   .done_ascii
+
+.convert:
+    ; We'll convert rax into decimal digits in reverse
+    ; So do: remainder = rax % 10 => digit
+    ;        rax = rax / 10
+    ;        repeat until rax == 0
+    xor   r12, r12        ; will hold the digit count
+.convert_loop:
+    xor   rdx, rdx
+    mov   r8, 10
+    div   r8              ; (rax / 10) => rax, remainder => rdx
+    add   rdx, '0'        ; convert remainder to ASCII
+    mov   byte [rbx + r12], dl
+    inc   r12
+    cmp   rax, 0
+    jne   .convert_loop
+
+    ; now reverse the digits in-place
+    mov   r13, 0          ; start index
+    dec   r12             ; r12 = last index
+.reverse_loop:
+    cmp   r13, r12
+    jge   .finish_reverse
+    mov   al, [rbx + r13]
+    mov   ah, [rbx + r12]
+    mov   [rbx + r13], ah
+    mov   [rbx + r12], al
+    inc   r13
+    dec   r12
+    jmp   .reverse_loop
+.finish_reverse:
+
+    ; append a null terminator
+    ; r13 is now one past the last written index
+    mov   [rbx + r13], byte 0
+
+.done_ascii:
+    pop   r15
+    pop   r14
+    pop   r13
+    pop   r12
+    pop   rbp
+    pop   rbx
+    ret
+
+
+11. Consider a document containing characters, numbers and special symbols, write a
+program to find the list of alphabets, numbers and special symbols and their number
+of occurrences in the document.
+
+#include <stdio.h>
+#include <ctype.h>
+
+int main(void) {
+    // We’ll count occurrences for:
+    //  - each letter (a-z, case-insensitive)
+    //  - each digit (0-9)
+    //  - each ASCII character that is not a letter or digit (possible "special" chars)
+    
+    int alphaCount[26] = {0};  // for a-z
+    int digitCount[10]  = {0}; // for 0-9
+    int specialCount[128] = {0}; // for ASCII range 0-127
+    
+    int ch;
+    
+    // Read characters until EOF
+    while ((ch = getchar()) != EOF) {
+        if (isalpha(ch)) {
+            // Convert to lowercase (so 'A' and 'a' are counted the same)
+            ch = tolower(ch);
+            alphaCount[ch - 'a']++;
+        } 
+        else if (isdigit(ch)) {
+            digitCount[ch - '0']++;
+        } 
+        else {
+            // Count any ASCII character that is not alphanumeric (0 to 127)
+            if (ch >= 0 && ch < 128) {
+                specialCount[ch]++;
+            }
+        }
+    }
+    
+    // Print results for alphabets
+    printf("Alphabets:\n");
+    for (int i = 0; i < 26; i++) {
+        if (alphaCount[i] > 0) {
+            printf("  %c : %d\n", 'a' + i, alphaCount[i]);
+        }
+    }
+    
+    // Print results for digits
+    printf("\nDigits:\n");
+    for (int i = 0; i < 10; i++) {
+        if (digitCount[i] > 0) {
+            printf("  %d : %d\n", i, digitCount[i]);
+        }
+    }
+    
+    // Print results for special characters (excluding alphanumeric)
+    printf("\nSpecial Symbols:\n");
+    for (int i = 0; i < 128; i++) {
+        // If it has a nonzero count and is not alphanumeric or whitespace
+        if (specialCount[i] > 0 && !isalnum(i) && !isspace(i)) {
+            // Print the character in a readable way:
+            //  - If it’s a control character, we can print its ASCII code instead
+            if (isprint(i)) {
+                printf("  '%c' : %d\n", i, specialCount[i]);
+            } else {
+                printf("  ASCII %d : %d\n", i, specialCount[i]);
+            }
+        }
+    }
+    
+    return 0;
+}
+
+
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+int main(void) {
+    char filename[256];
+    FILE *fp;
+    int ch;
+    
+    // Arrays to count occurrences:
+    //  - alphaCount[a-z] (26 lowercase letters)
+    //  - digitCount[0-9]
+    //  - specialCount for ASCII 0-127
+    int alphaCount[26]  = {0};
+    int digitCount[10]  = {0};
+    int specialCount[128] = {0};
+    
+    // Prompt user for the file name
+    printf("Enter the file name: ");
+    if (scanf("%255s", filename) != 1) {
+        fprintf(stderr, "Failed to read file name.\n");
+        return 1;
+    }
+    
+    // Open the file in read mode
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+        perror("Error opening file");
+        return 1;
+    }
+    
+    // Read characters from the file until EOF
+    while ((ch = fgetc(fp)) != EOF) {
+        if (isalpha(ch)) {
+            // Convert all letters to lowercase for uniform counting
+            ch = tolower(ch);
+            alphaCount[ch - 'a']++;
+        } 
+        else if (isdigit(ch)) {
+            digitCount[ch - '0']++;
+        } 
+        else {
+            // Count any ASCII character that is not alphanumeric (0 to 127)
+            // Note: fgetc() returns an unsigned char cast to int, but we only
+            //       count if it's within the 0-127 range to avoid negative index.
+            if (ch >= 0 && ch < 128) {
+                specialCount[ch]++;
+            }
+        }
+    }
+    
+    // Close the file
+    fclose(fp);
+    
+    // Print results for alphabets
+    printf("\nAlphabets:\n");
+    for (int i = 0; i < 26; i++) {
+        if (alphaCount[i] > 0) {
+            printf("  %c : %d\n", 'a' + i, alphaCount[i]);
+        }
+    }
+    
+    // Print results for digits
+    printf("\nDigits:\n");
+    for (int i = 0; i < 10; i++) {
+        if (digitCount[i] > 0) {
+            printf("  %d : %d\n", i, digitCount[i]);
+        }
+    }
+    
+    // Print results for special characters
+    printf("\nSpecial Symbols:\n");
+    for (int i = 0; i < 128; i++) {
+        // Check if we have a nonzero count for non-alphanumeric characters
+        if (specialCount[i] > 0 && !isalnum(i) && i != ' ' && i != '\n' && i != '\r' && i != '\t') {
+            // Print the character if it’s printable, otherwise print ASCII code
+            if (isprint(i)) {
+                printf("  '%c' : %d\n", i, specialCount[i]);
+            } else {
+                printf("  ASCII %d : %d\n", i, specialCount[i]);
+            }
+        }
+    }
+
+    return 0;
+}
+
+nasm -f elf64 count_occurrences.asm -o count_occurrences.o
+ld count_occurrences.o -o count_occurrences
+./count_occurrences
+
+; ------------------------------------------------------------------------------
+; NASM Assembly (64-bit, Linux)
+; 
+; Program:
+;   1) Prompt user for filename.
+;   2) Open that file, read all its bytes.
+;   3) Count occurrences of each ASCII character (0..127).
+;   4) Print categorized results:
+;        - Alphabets (A-Z, a-z)
+;        - Digits (0-9)
+;        - Special symbols (everything else in 0..127)
+;
+; Build and Run:
+;   nasm -f elf64 count_occurrences.asm -o count_occurrences.o
+;   ld count_occurrences.o -o count_occurrences
+;   ./count_occurrences
+;
+; Sample input:
+;   Enter file name: sample.txt
+; ------------------------------------------------------------------------------
+    
+SECTION .data
+    prompt_filename:       db  "Enter file name: ", 0
+    prompt_filename_len:   equ $ - prompt_filename
+
+    alphabets_title:       db  "Alphabets and their occurrences:", 10, 0
+    digits_title:          db  "Digits and their occurrences:", 10, 0
+    specials_title:        db  "Special symbols and their occurrences:", 10, 0
+    
+    newline:               db  10, 0          ; just "\n"
+    space:                 db  " ", 0         ; single space
+
+    ; Format for printing character: "'x': "
+    char_prefix:           db  "'", 0
+    char_suffix:           db  "': ", 0
+
+    ; For printing ASCII code if not easily printable, e.g. [ASCII 7] : 
+    ascii_prefix:          db  "[ASCII ", 0
+    ascii_suffix:          db  "] : ", 0
+
+SECTION .bss
+    filename_buffer:  resb 256                ; buffer for the filename
+    read_buffer:      resb 1024               ; buffer to read file in chunks
+    count_array:      resd 128                ; 128 integers (4 bytes each) to count each ASCII char
+                                              ; count_array[i] = # of occurrences of ASCII code i
+
+SECTION .text
+    global _start
+
+; ------------------------------------------------------------------------------
+; _start
+; ------------------------------------------------------------------------------
+_start:
+
+    ; 1) Prompt user for filename
+    ;    We'll print: "Enter file name: "
+    mov   rdi, prompt_filename
+    mov   rsi, prompt_filename_len
+    call  print_string
+
+    ;    Read filename into filename_buffer (one line, up to 255 bytes)
+    mov   rdi, filename_buffer
+    mov   rsi, 256
+    call  read_line
+    ; Return value in rax = length of filename (not including null)
+
+    ; 2) Open the file (read-only)
+    mov   rax, 2              ; SYS_open
+    mov   rdi, filename_buffer
+    ; flags: O_RDONLY = 0
+    ; mode (unused for read-only) = 0
+    xor   rsi, rsi            ; flags = O_RDONLY
+    xor   rdx, rdx            ; mode = 0
+    syscall
+
+    cmp   rax, 0
+    js    file_open_error     ; if rax < 0, open failed
+
+    mov   r12, rax            ; store file descriptor in r12
+
+.read_loop:
+    ; 3) Read chunks from file, update count_array
+    mov   rax, 0              ; SYS_read
+    mov   rdi, r12            ; file descriptor
+    mov   rsi, read_buffer    ; buffer
+    mov   rdx, 1024           ; max bytes to read
+    syscall
+
+    cmp   rax, 0
+    jle   .done_reading       ; 0 => EOF, <0 => error
+    
+    ; rax = number of bytes read
+    mov   r13, rax            ; store in r13 for loop
+
+    xor   rbx, rbx            ; index = 0
+.process_chunk:
+    cmp   rbx, r13
+    jge   .read_loop          ; once we process the chunk, read again
+
+    ; read_buffer[rbx]
+    mov   r8, [read_buffer + rbx]
+    and   r8, 0xFF            ; ensure it's in 0..255
+    cmp   r8, 128
+    jae   .skip_char          ; if >= 128, ignore
+
+    ; count_array[r8]
+    ; We treat count_array as an array of 4-byte integers. So offset = r8*4
+    mov   eax, [count_array + r8*4]
+    add   eax, 1
+    mov   [count_array + r8*4], eax
+
+.skip_char:
+    inc   rbx
+    jmp   .process_chunk
+
+.done_reading:
+    ; done reading the file
+    ; close file
+    mov   rax, 3              ; SYS_close
+    mov   rdi, r12            ; file descriptor
+    syscall
+
+    ; 4) Print results
+    ; First: "Alphabets and their occurrences:"
+    mov   rdi, alphabets_title
+    call  print_line
+
+    ;    For A..Z, a..z
+    ;    We'll iterate ASCII 0..127; check if it's alpha; if count>0, print
+    xor   rbx, rbx
+.print_alphas:
+    cmp   rbx, 128
+    jge   .after_alphas
+
+    mov   eax, [count_array + rbx*4]  ; occurrence count
+    cmp   eax, 0
+    jle   .next_alpha
+
+    ; check if rbx is alpha => (A..Z or a..z)
+    ; 'A'..'Z' = 65..90, 'a'..'z' = 97..122
+    cmp   rbx, 65
+    jl    .next_alpha
+    cmp   rbx, 90
+    jle   .is_upper     ; if 65 <= rbx <= 90 => uppercase
+
+    cmp   rbx, 97
+    jl    .next_alpha
+    cmp   rbx, 122
+    jle   .is_lower     ; if 97 <= rbx <= 122 => lowercase
+
+    jmp   .next_alpha
+
+.is_upper:
+    ; print "'X': " + <count>
+    mov   rdi, rbx        ; character code
+    mov   rsi, eax        ; count
+    call  print_char_count
+    jmp   .next_alpha
+
+.is_lower:
+    mov   rdi, rbx
+    mov   rsi, eax
+    call  print_char_count
+    jmp   .next_alpha
+
+.next_alpha:
+    inc   rbx
+    jmp   .print_alphas
+
+.after_alphas:
+    ; Print "Digits and their occurrences:"
+    mov   rdi, digits_title
+    call  print_line
+
+    ;    For digits '0'..'9' => 48..57
+    mov   rbx, 48
+.print_digits:
+    cmp   rbx, 58
+    jge   .after_digits
+
+    mov   eax, [count_array + rbx*4]
+    cmp   eax, 0
+    jle   .next_digit
+
+    ; print "'0': " + <count>
+    mov   rdi, rbx
+    mov   rsi, eax
+    call  print_char_count
+
+.next_digit:
+    inc   rbx
+    jmp   .print_digits
+
+.after_digits:
+    ; Print "Special symbols and their occurrences:"
+    mov   rdi, specials_title
+    call  print_line
+
+    ;   We'll consider "special" as anything else in 0..127 that is not alpha/digit
+    xor   rbx, rbx
+.print_specials:
+    cmp   rbx, 128
+    jge   .done_all
+
+    mov   eax, [count_array + rbx*4]
+    cmp   eax, 0
+    jle   .next_special
+
+    ; check if digit or alpha => skip
+    cmp   rbx, 48
+    jb    .check_alpha
+    cmp   rbx, 57
+    jbe   .next_special   ; it's a digit
+
+.check_alpha:
+    ; 'A'..'Z' => 65..90, 'a'..'z' => 97..122
+    cmp   rbx, 65
+    jb    .print_special  ; rbx < 65 => not alpha
+    cmp   rbx, 90
+    jbe   .next_special   ; in uppercase range => skip
+
+    cmp   rbx, 97
+    jb    .print_special  ; less than 'a' => not alpha
+    cmp   rbx, 122
+    jbe   .next_special   ; in lowercase range => skip
+
+.print_special:
+    ; print it
+    mov   rdi, rbx     ; ASCII code
+    mov   rsi, eax     ; count
+    call  print_special_count
+
+.next_special:
+    inc   rbx
+    jmp   .print_specials
+
+.done_all:
+    ; exit(0)
+    mov   rax, 60      ; SYS_exit
+    xor   rdi, rdi
+    syscall
+
+; ------------------------------------------------------------------------------
+; file_open_error:
+; ------------------------------------------------------------------------------
+file_open_error:
+    ; Print a simple error message (you can customize as needed).
+    ; We'll just print a newline and exit with code 1.
+    mov   rax, 1
+    mov   rdi, 1               ; stdout
+    mov   rsi, newline
+    mov   rdx, 1               ; length = 1 (just the newline char)
+    syscall
+
+    mov   rax, 60              ; sys_exit
+    mov   rdi, 1               ; exit code = 1
+    syscall
+
+; ------------------------------------------------------------------------------
+; print_string:
+;   rdi -> address
+;   rsi -> length
+; ------------------------------------------------------------------------------
+print_string:
+    mov   rax, 1       ; SYS_write
+    mov   rdi, 1       ; fd = stdout
+    ; rsi = address of string, rdx = length (must be set before calling)
+    syscall
+    ret
+
+; ------------------------------------------------------------------------------
+; print_line:
+;   rdi -> null-terminated string
+;   prints until 0, then newline
+; ------------------------------------------------------------------------------
+print_line:
+    push  rdi
+    ; compute length with c_strlen
+    call  c_strlen
+    mov   rdx, rax     ; length
+    pop   rdi
+    ; now we have rdi = address, rdx = length
+    call  print_string
+
+    ; print a newline
+    mov   rdi, newline
+    call  c_strlen
+    mov   rsi, rax     ; length
+    mov   rdi, newline
+    call  print_string
+    ret
+
+; ------------------------------------------------------------------------------
+; print_char_count:
+;   rdi = ASCII code of the character
+;   rsi = integer count
+;   Format: "'<char>': <count>\n"
+; ------------------------------------------------------------------------------
+print_char_count:
+    push  rdi
+    push  rsi
+
+    ; Print "'"
+    mov   rdi, char_prefix
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, char_prefix
+    call  print_string
+
+    ; Print the character
+    pop   rax          ; rax = count, we want the character code -> we popped in reverse order
+    pop   rbx          ; rbx = ASCII code
+    push  rax          ; restore count
+    push  rbx          ; restore ASCII code
+
+    mov   rdi, 1       ; SYS_write
+    mov   rax, 1
+    mov   rsi, rsp      ; We'll store the character on stack temporarily
+    mov   byte [rsp], bl
+    mov   rdx, 1       ; just 1 byte
+    syscall
+
+    ; Print "': "
+    mov   rdi, char_suffix
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, char_suffix
+    call  print_string
+
+    ; Print the count as decimal
+    pop   rbx  ; ASCII code
+    pop   rax  ; count in rax
+    push  rbx  ; restore ASCII code on stack if needed
+    push  rax  ; restore count for safe
+    mov   rdi, rax
+    mov   rsi, read_buffer    ; reuse read_buffer for int-to-ascii
+    call  int_to_ascii        ; result in read_buffer (null-terminated)
+
+    ; print that decimal string
+    mov   rdi, read_buffer
+    call  c_strlen
+    mov   rsi, rax   ; length
+    mov   rdi, read_buffer
+    call  print_string
+
+    ; print newline
+    mov   rdi, newline
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, newline
+    call  print_string
+
+    pop   rax  ; discard
+    pop   rbx  ; discard
+    ret
+
+; ------------------------------------------------------------------------------
+; print_special_count:
+;   rdi = ASCII code
+;   rsi = count
+;   If printable, use "'x': count\n"
+;   else use "[ASCII xx] : count\n"
+; ------------------------------------------------------------------------------
+print_special_count:
+    push  rdi
+    push  rsi
+
+    ; Check if rdi is printable => 32..126
+    pop   rbx  ; count
+    pop   rax  ; ASCII code
+    push  rax  ; restore
+    push  rbx  ; restore
+
+    cmp   rax, 32
+    jl    .not_printable
+    cmp   rax, 126
+    jg    .not_printable
+
+    ; printable => use print_char_count
+    ; rdi = ASCII code, rsi = count
+    pop   rbx  ; count
+    pop   rax  ; ASCII code
+    mov   rdi, rax
+    mov   rsi, rbx
+    call  print_char_count
+    ret
+
+.not_printable:
+    ; not printable => "[ASCII <num>] : <count>\n"
+    ; Print "[ASCII "
+    mov   rdi, ascii_prefix
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, ascii_prefix
+    call  print_string
+
+    ; print the ASCII code as decimal
+    pop   rbx  ; count
+    pop   rax  ; ASCII code
+    push  rbx
+    push  rax
+    mov   rdi, rax
+    mov   rsi, read_buffer
+    call  int_to_ascii
+    ; print it
+    mov   rdi, read_buffer
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, read_buffer
+    call  print_string
+
+    ; print "] : "
+    mov   rdi, ascii_suffix
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, ascii_suffix
+    call  print_string
+
+    ; now print the count
+    pop   rax  ; ASCII code
+    pop   rbx  ; count
+    push  rax
+    push  rbx
+
+    mov   rdi, rbx
+    mov   rsi, read_buffer
+    call  int_to_ascii
+
+    mov   rdi, read_buffer
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, read_buffer
+    call  print_string
+
+    ; newline
+    mov   rdi, newline
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, newline
+    call  print_string
+
+    pop   rax
+    pop   rbx
+    ret
+
+; ------------------------------------------------------------------------------
+; read_line:
+;   Reads a line from stdin (up to rsi - 1 bytes) into buffer rdi.
+;   Removes trailing newline if present.
+;   Returns (in rax) the length of the string (not counting the null terminator).
+; ------------------------------------------------------------------------------
+read_line:
+    ; use sys_read(0, buffer, length)
+    mov   rax, 0        ; SYS_read
+    mov   rdi, 0        ; stdin
+    push  rbx
+    mov   rbx, rsi      ; store max length in rbx
+    mov   rsi, r8       ; not used, we will reorder registers carefully
+
+    ; we had:
+    ;   rdi -> buffer
+    ;   rsi -> max_length
+    ; we need for sys_read:
+    ;   rdi = fd (0)
+    ;   rsi = buffer
+    ;   rdx = count
+    ; so we do:
+    mov   rsi, [rsp + 8] ; buffer pointer? Actually let's do a simpler approach:
+
+    ; Actually let's reorder carefully:
+    ; Before call: rdi=buffer, rsi=maxlen
+    ; We want: rax=0(SYS_read), rdi=0(fd), rsi=buffer, rdx=maxlen
+    pop   rbx       ; save rbx
+    mov   rdx, rsi  ; rdx = max_length
+    mov   rsi, rdi  ; rsi = buffer
+    xor   rdi, rdi  ; rdi = 0 for stdin
+    syscall
+
+    cmp   rax, 1
+    jl    .no_data   ; 0 => EOF, <0 => error
+    ; rax = number of bytes read
+    ; zero-terminate
+    mov   r8, rax
+    ; if the last char is '\n', remove it
+    dec   r8
+    js    .no_data
+
+    mov   r9, rsi
+    add   r9, r8
+    cmp   byte [r9], 10  ; '\n'?
+    jne   .add_null
+    mov   byte [r9], 0   ; remove newline
+    jmp   .length_done
+
+.add_null:
+    ; ensure we have space to add null
+    ; if r8 < rdx-1, we can add null
+    mov   rcx, rdx
+    dec   rcx
+    cmp   r8, rcx
+    jge   .length_done
+    mov   byte [r9+1], 0
+
+.length_done:
+    ; r8 is the length minus the newline if removed
+    inc   r8  ; because we did 'dec r8' above to point to last char
+    mov   rax, r8
+    jmp   .restore
+
+.no_data:
+    xor   rax, rax
+
+.restore:
+    pop   rbx
+    ret
+
+; ------------------------------------------------------------------------------
+; c_strlen:
+;   rdi -> null-terminated string
+;   returns length in rax
+; ------------------------------------------------------------------------------
+c_strlen:
+    xor   rax, rax
+.str_loop:
+    cmp   byte [rdi + rax], 0
+    je    .done
+    inc   rax
+    jmp   .str_loop
+.done:
+    ret
+
+; ------------------------------------------------------------------------------
+; int_to_ascii:
+;   Convert unsigned integer in rdi to a null-terminated decimal string at [rsi].
+;   (No negative handling here. If you need signed, you could add that.)
+; ------------------------------------------------------------------------------
+int_to_ascii:
+    push  rbx
+    push  rbp
+    push  r12
+    push  r13
+    push  r14
+    push  r15
+
+    mov   rax, rdi        ; the number to convert
+    mov   rbx, rsi        ; buffer pointer
+    xor   r12, r12        ; digit count
+    cmp   rax, 0
+    jne   .convert
+    ; if 0, just store "0\0"
+    mov   byte [rbx], '0'
+    mov   byte [rbx+1], 0
+    jmp   .done_ascii
+
+.convert:
+    ; convert in reverse
+.convert_loop:
+    xor   rdx, rdx
+    mov   rcx, 10
+    div   rcx               ; rax / 10 => rax, remainder => rdx
+    add   rdx, '0'
+    mov   byte [rbx + r12], dl
+    inc   r12
+    cmp   rax, 0
+    jne   .convert_loop
+
+    ; now reverse the digits
+    mov   r13, 0           ; start index
+    dec   r12              ; last index
+.rev_loop:
+    cmp   r13, r12
+    jge   .finish_rev
+    mov   dl, [rbx + r13]
+    mov   dh, [rbx + r12]
+    mov   [rbx + r13], dh
+    mov   [rbx + r12], dl
+    inc   r13
+    dec   r12
+    jmp   .rev_loop
+
+.finish_rev:
+    ; append null terminator
+    ; r13 is now the midpoint, but we actually want the total length.
+    ; We had r12 as the last index, we don't have that now. Let's do it simpler:
+    ; We'll re-scan for the end:
+    mov   rdi, rbx
+    call  c_strlen
+    mov   byte [rbx + rax], 0
+
+.done_ascii:
+    pop   r15
+    pop   r14
+    pop   r13
+    pop   r12
+    pop   rbp
+    pop   rbx
+    ret
+
+
+4. Write a program that replaces every alphabet (case sensitive) of a given input string
+with its next (using roundoff) ASCII alphabet character and prints the resultant
+string on the output console.
+For example, replace ASCII value 127 with 32 and 32 with 33 and so on.
+Ex:
+wxyz –> xyzA
+
+#include <stdio.h>
+#include <string.h>
+
+int main(void) {
+    char str[1000];
+
+    printf("Enter a string: ");
+    // Read a line of input (including spaces) safely
+    fgets(str, sizeof(str), stdin);
+
+    // Remove trailing newline (if any) from fgets
+    size_t len = strlen(str);
+    if (len > 0 && str[len - 1] == '\n') {
+        str[len - 1] = '\0';
+    }
+
+    // Transform each character
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] >= 'A' && str[i] < 'Z') {
+            // A..Y -> next uppercase letter
+            str[i]++;
+        }
+        else if (str[i] == 'Z') {
+            // Z -> a
+            str[i] = 'a';
+        }
+        else if (str[i] >= 'a' && str[i] < 'z') {
+            // a..y -> next lowercase letter
+            str[i]++;
+        }
+        else if (str[i] == 'z') {
+            // z -> A
+            str[i] = 'A';
+        }
+        // Otherwise, non-alphabetical characters are unchanged
+    }
+
+    printf("Resulting string: %s\n", str);
+
+    return 0;
+}
+
+nasm -f elf64 alphabet_round.asm -o alphabet_round.o
+ld alphabet_round.o -o alphabet_round
+./alphabet_round
+
+; ------------------------------------------------------------------------------
+; NASM Assembly (64-bit, Linux)
+;
+; Program:
+;   1) Prompt user for a string.
+;   2) Transform each alphabet character according to a 52-letter round-robin:
+;        'A'..'Y' -> next uppercase letter
+;        'Z'      -> 'a'
+;        'a'..'y' -> next lowercase letter
+;        'z'      -> 'A'
+;      Non-alphabet characters remain unchanged.
+;   3) Print the transformed string.
+;   4) Exit.
+;
+; Example:
+;   Input : "wxyz"
+;   Output: "xyzA"
+;
+; Build and Run:
+;   nasm -f elf64 alphabet_round.asm -o alphabet_round.o
+;   ld alphabet_round.o -o alphabet_round
+;   ./alphabet_round
+; ------------------------------------------------------------------------------
+    
+SECTION .data
+    prompt_msg:     db  "Enter a string: ", 0
+    prompt_len:     equ $ - prompt_msg
+
+    output_msg:     db  "Transformed string: ", 0
+    output_len:     equ $ - output_msg
+
+    newline:        db  10, 0   ; just "\n"
+
+SECTION .bss
+    input_buffer:   resb 256    ; buffer for user input (up to 255 chars + null)
+
+SECTION .text
+    global _start
+
+; ------------------------------------------------------------------------------
+; _start
+; ------------------------------------------------------------------------------
+_start:
+
+    ; 1) Prompt user: "Enter a string: "
+    mov   rdi, prompt_msg
+    mov   rsi, prompt_len
+    call  print_string
+
+    ; Read line into input_buffer
+    mov   rdi, input_buffer
+    mov   rsi, 256
+    call  read_line
+    ; rax = length of the string (not counting null terminator)
+
+    ; 2) Transform the string in-place
+    xor   rbx, rbx               ; rbx = index = 0
+transform_loop:
+    cmp   rbx, rax               ; have we reached the string length?
+    jge   transform_done
+
+    ; load current character
+    mov   dl, [input_buffer + rbx]
+
+    ; check uppercase 'A'..'Y'
+    cmp   dl, 'A'
+    jl    .check_lower
+    cmp   dl, 'Y'
+    jg    .check_Z
+    ; => 'A' <= dl <= 'Y': just dl++
+    inc   dl
+    mov   [input_buffer + rbx], dl
+    jmp   .inc_index
+
+.check_Z:
+    cmp   dl, 'Z'
+    jne   .check_lower
+    ; dl == 'Z' => becomes 'a'
+    mov   dl, 'a'
+    mov   [input_buffer + rbx], dl
+    jmp   .inc_index
+
+.check_lower:
+    ; check 'a'..'y'
+    cmp   dl, 'a'
+    jl    .not_alpha
+    cmp   dl, 'y'
+    jg    .check_z
+    ; => 'a' <= dl <= 'y': just dl++
+    inc   dl
+    mov   [input_buffer + rbx], dl
+    jmp   .inc_index
+
+.check_z:
+    cmp   dl, 'z'
+    jne   .not_alpha
+    ; dl == 'z' => becomes 'A'
+    mov   dl, 'A'
+    mov   [input_buffer + rbx], dl
+    jmp   .inc_index
+
+.not_alpha:
+    ; not an alphabet => do nothing
+    ; (dl stays the same)
+    jmp   .inc_index
+
+.inc_index:
+    inc   rbx
+    jmp   transform_loop
+
+transform_done:
+
+    ; 3) Print "Transformed string: "
+    mov   rdi, output_msg
+    mov   rsi, output_len
+    call  print_string
+
+    ; Then print the transformed buffer
+    ; Compute its length (rax is still the length from read_line)
+    mov   rdi, input_buffer
+    mov   rdx, rax
+    call  print_string_direct
+
+    ; Print newline
+    mov   rdi, newline
+    call  c_strlen
+    mov   rsi, rax
+    mov   rdi, newline
+    call  print_string
+
+    ; 4) Exit
+    mov   rax, 60        ; SYS_exit
+    xor   rdi, rdi
+    syscall
+
+; ------------------------------------------------------------------------------
+; print_string:
+;   rdi -> address of data
+;   rsi = length of data
+;   Writes to stdout.
+; ------------------------------------------------------------------------------
+print_string:
+    mov   rax, 1     ; SYS_write
+    mov   rdi, 1     ; fd = stdout
+    syscall
+    ret
+
+; ------------------------------------------------------------------------------
+; print_string_direct:
+;   rdi -> address of data
+;   rdx = length to write
+;   (We pass length in rdx to avoid reusing rsi).
+; ------------------------------------------------------------------------------
+print_string_direct:
+    mov   rax, 1     ; SYS_write
+    mov   rsi, rdi   ; buffer address
+    mov   rdi, 1     ; fd = stdout
+    syscall
+    ret
+
+; ------------------------------------------------------------------------------
+; read_line:
+;   Reads up to (rsi - 1) bytes from stdin into [rdi].
+;   Removes trailing newline, if present.
+;   Returns (in rax) the string length (not counting null terminator).
+; ------------------------------------------------------------------------------
+read_line:
+    ; We'll do sys_read(0, buffer, rsi)
+    push  rbx
+
+    mov   rax, 0      ; SYS_read
+    mov   rdi, 0      ; fd = stdin
+    mov   rsi, rdi    ; but we must reorder registers carefully...
+    ; Actually let's do:
+    ;   rdi=0 (stdin),
+    ;   rsi=[the buffer pointer],
+    ;   rdx=[the buffer size].
+    ; But we have the buffer pointer in the "old" rdi. We'll preserve it:
+
+    mov   rbx, rdi    ; rbx = buffer pointer
+    mov   rcx, rsi    ; rcx = max len
+    xor   rdi, rdi    ; rdi=0 => stdin
+    mov   rsi, rbx    ; rsi => buffer
+    mov   rdx, rcx    ; rdx => max len
+    syscall
+
+    cmp   rax, 1
+    jl    .no_data
+    ; rax = number of bytes read
+    ; zero-terminate
+    mov   r8, rax
+    ; if last char is '\n', remove it
+    dec   r8
+    js    .no_data
+
+    mov   r9, rbx
+    add   r9, r8
+    cmp   byte [r9], 10   ; '\n' ?
+    jne   .add_null
+    mov   byte [r9], 0    ; remove newline
+    jmp   .length_done
+
+.add_null:
+    ; ensure we have space to add a null
+    ; if r8 < (rcx-1), we can safely add a null
+    mov   r10, rcx
+    dec   r10
+    cmp   r8, r10
+    jge   .length_done
+
+    mov   byte [r9+1], 0
+
+.length_done:
+    inc   r8  ; because we did dec r8 above
+    mov   rax, r8
+    jmp   .restore
+
+.no_data:
+    xor   rax, rax
+
+.restore:
+    pop   rbx
+    ret
+
+; ------------------------------------------------------------------------------
+; c_strlen:
+;   rdi -> null-terminated string
+;   returns length in rax
+; ------------------------------------------------------------------------------
+c_strlen:
+    xor   rax, rax
+.str_loop:
+    cmp   byte [rdi + rax], 0
+    je    .done
+    inc   rax
+    jmp   .str_loop
+.done:
+    ret
+
+
+9. Write a program to find the number of words, vowels and consonants from a given
+document.
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+int main(void) {
+    char line[1024];
+    int wordCount = 0;
+    int vowelCount = 0;
+    int consonantCount = 0;
+
+    // Read line by line until EOF
+    while (fgets(line, sizeof(line), stdin)) {
+        // Tokenize the line by whitespace
+        char *token = strtok(line, " \t\n\r");
+        while (token != NULL) {
+            // Each token is a word
+            wordCount++;
+
+            // For each character in the token, check if it's a vowel or consonant
+            for (int i = 0; token[i] != '\0'; i++) {
+                char ch = token[i];
+                
+                // Check if it's an alphabet
+                if (isalpha(ch)) {
+                    // Convert to lowercase for easier checking
+                    char lower = tolower(ch);
+                    if (lower == 'a' || lower == 'e' || lower == 'i' ||
+                        lower == 'o' || lower == 'u') {
+                        vowelCount++;
+                    } else {
+                        consonantCount++;
+                    }
+                }
+            }
+
+            // Move to the next token/word
+            token = strtok(NULL, " \t\n\r");
+        }
+    }
+
+    // Print the results
+    printf("Number of words      : %d\n", wordCount);
+    printf("Number of vowels     : %d\n", vowelCount);
+    printf("Number of consonants : %d\n", consonantCount);
+
+    return 0;
+}
+
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+int main(void) {
+    char filename[256];
+    FILE *fp;
+    char line[1024];
+    
+    int wordCount = 0;
+    int vowelCount = 0;
+    int consonantCount = 0;
+
+    // Prompt for the file name
+    printf("Enter the file name: ");
+    if (scanf("%255s", filename) != 1) {
+        fprintf(stderr, "Failed to read file name.\n");
+        return 1;
+    }
+
+    // Open the file in read mode
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+        perror("Error opening file");
+        return 1;
+    }
+
+    // Read line by line
+    while (fgets(line, sizeof(line), fp)) {
+        // Tokenize the line by whitespace
+        char *token = strtok(line, " \t\n\r");
+        while (token != NULL) {
+            // Each token is a word
+            wordCount++;
+
+            // Count vowels/consonants in the token
+            for (int i = 0; token[i] != '\0'; i++) {
+                char ch = token[i];
+                
+                if (isalpha(ch)) {
+                    char lower = tolower(ch);
+                    if (lower == 'a' || lower == 'e' || lower == 'i' ||
+                        lower == 'o' || lower == 'u') {
+                        vowelCount++;
+                    } else {
+                        consonantCount++;
+                    }
+                }
+            }
+
+            // Next token
+            token = strtok(NULL, " \t\n\r");
+        }
+    }
+
+    // Close the file
+    fclose(fp);
+
+    // Print the results
+    printf("Number of words      : %d\n", wordCount);
+    printf("Number of vowels     : %d\n", vowelCount);
+    printf("Number of consonants : %d\n", consonantCount);
+
+    return 0;
+}
+
+nasm -f elf64 count_doc.asm -o count_doc.o
+ld count_doc.o -o count_doc
+./count_doc
+
+; ------------------------------------------------------------------------------
+; NASM Assembly (64-bit, Linux)
+;
+; Program:
+;   1) Prompt user for a filename.
+;   2) Open the file, read it in chunks.
+;   3) Count:
+;       - number of words (alphabetic sequences)
+;       - number of vowels (a, e, i, o, u, case-insensitive)
+;       - number of consonants (other alphabets)
+;   4) Print the result.
+;   5) Exit.
+;
+; Build and run:
+;   nasm -f elf64 count_doc.asm -o count_doc.o
+;   ld count_doc.o -o count_doc
+;   ./count_doc
+; ------------------------------------------------------------------------------
+    
+SECTION .data
+    prompt_filename:    db  "Enter file name: ", 0
+    prompt_filename_len equ  $ - prompt_filename
+
+    result_prefix:      db  "Results:", 10, 0       ; "Results:\n"
+    word_msg:           db  "Words: ", 0
+    vowel_msg:          db  "Vowels: ", 0
+    cons_msg:           db  "Consonants: ", 0
+
+    newline:            db  10, 0   ; "\n"
+
+SECTION .bss
+    filename_buffer:    resb 256    ; for file name
+    read_buffer:        resb 1024   ; for reading file in chunks
+
+    word_count:         resq 1      ; 8 bytes (int64) for word count
+    vowel_count:        resq 1      ; 8 bytes
+    cons_count:         resq 1      ; 8 bytes
+
+    in_word:            resb 1      ; boolean flag (0/1)
+
+SECTION .text
+    global _start
+
+; ------------------------------------------------------------------------------
+; _start
+; ------------------------------------------------------------------------------
+_start:
+
+    ; 1) Prompt user for filename
+    mov   rdi, prompt_filename
+    mov   rsi, prompt_filename_len
+    call  print_string
+
+    ; read one line into filename_buffer
+    mov   rdi, filename_buffer
+    mov   rsi, 256
+    call  read_line
+    ; rax = length of filename (not necessarily used here)
+
+    ; Initialize counters to 0
+    xor   rax, rax
+    mov   [word_count], rax
+    mov   [vowel_count], rax
+    mov   [cons_count], rax
+    mov   byte [in_word], 0
+
+    ; 2) Open file (read-only)
+    mov   rax, 2              ; SYS_open
+    mov   rdi, filename_buffer
+    xor   rsi, rsi            ; O_RDONLY = 0
+    xor   rdx, rdx            ; mode = 0 (unused for read-only)
+    syscall
+
+    cmp   rax, 0
+    js    file_open_error     ; if < 0, open failed
+    mov   r12, rax            ; store file descriptor in r12
+
+.read_loop:
+    ; 3) Read up to 1024 bytes
+    mov   rax, 0              ; SYS_read
+    mov   rdi, r12            ; file descriptor
+    mov   rsi, read_buffer    ; buffer
+    mov   rdx, 1024           ; max bytes
+    syscall
+
+    cmp   rax, 0
+    jle   .done_read          ; 0 => EOF, <0 => read error
+
+    mov   r13, rax            ; number of bytes read
+
+    ; Process each byte
+    xor   rbx, rbx            ; index = 0
+.process_chunk:
+    cmp   rbx, r13
+    jge   .read_loop          ; finished this chunk, read again
+
+    ; current byte in read_buffer[rbx]
+    mov   dl, [read_buffer + rbx]
+    
+    ; is it alphabetic?
+    ; 'A'..'Z' => 65..90, 'a'..'z' => 97..122
+    ; We'll do:
+    ;   if alpha => check vowel or consonant
+    ;                if in_word=0 => word_count++
+    ;                set in_word=1
+    ;   else => in_word=0
+    ;
+    ; Check if 'A' <= dl <= 'Z'
+    cmp   dl, 'A'
+    jl    .not_alpha
+    cmp   dl, 'Z'
+    jle   .is_alpha_upper
+    ; if not in that range, check 'a'..'z'
+    cmp   dl, 'a'
+    jl    .not_alpha
+    cmp   dl, 'z'
+    jg    .not_alpha
+    ; => 'a' <= dl <= 'z'
+    jmp   .is_alpha_lower
+
+.is_alpha_upper:
+    ; dl is uppercase => check vowel?
+    ; vowels: 'A'(65), 'E'(69), 'I'(73), 'O'(79), 'U'(85)
+    cmp   dl, 'A'
+    je    .vowel
+    cmp   dl, 'E'
+    je    .vowel
+    cmp   dl, 'I'
+    je    .vowel
+    cmp   dl, 'O'
+    je    .vowel
+    cmp   dl, 'U'
+    je    .vowel
+    jmp   .consonant
+
+.is_alpha_lower:
+    ; dl is lowercase => check vowels: 'a'(97), 'e'(101), 'i'(105), 'o'(111), 'u'(117)
+    cmp   dl, 'a'
+    je    .vowel
+    cmp   dl, 'e'
+    je    .vowel
+    cmp   dl, 'i'
+    je    .vowel
+    cmp   dl, 'o'
+    je    .vowel
+    cmp   dl, 'u'
+    je    .vowel
+    jmp   .consonant
+
+.vowel:
+    ; increment vowel_count
+    mov   rax, [vowel_count]
+    inc   rax
+    mov   [vowel_count], rax
+    jmp   .check_word
+
+.consonant:
+    ; increment cons_count
+    mov   rax, [cons_count]
+    inc   rax
+    mov   [cons_count], rax
+    jmp   .check_word
+
+.check_word:
+    ; if in_word=0 => we found start of a new word => word_count++
+    cmp   byte [in_word], 0
+    jne   .alpha_done   ; already in word
+    ; not in word yet => start now
+    mov   rax, [word_count]
+    inc   rax
+    mov   [word_count], rax
+
+    mov   byte [in_word], 1
+    jmp   .alpha_done
+
+.alpha_done:
+    ; done with alpha logic
+    inc   rbx
+    jmp   .process_chunk
+
+.not_alpha:
+    ; set in_word=0
+    mov   byte [in_word], 0
+
+    inc   rbx
+    jmp   .process_chunk
+
+.done_read:
+    ; close file
+    mov   rax, 3              ; SYS_close
+    mov   rdi, r12
+    syscall
+
+    ; 4) Print results
+    mov   rdi, result_prefix
+    call  print_line
+
+    ; Print: "Words: <value>\n"
+    mov   rdi, word_msg
+    call  print_string_z      ; zero-terminated
+    mov   rax, [word_count]
+    mov   rdi, rax
+    mov   rsi, read_buffer    ; reuse read_buffer as conversion buffer
+    call  int_to_ascii
+    ; print the ASCII number
+    mov   rdi, read_buffer
+    call  print_string_z
+    ; newline
+    mov   rdi, newline
+    call  print_string_z
+
+    ; Print: "Vowels: <value>\n"
+    mov   rdi, vowel_msg
+    call  print_string_z
+    mov   rax, [vowel_count]
+    mov   rdi, rax
+    mov   rsi, read_buffer
+    call  int_to_ascii
+    mov   rdi, read_buffer
+    call  print_string_z
+    ; newline
+    mov   rdi, newline
+    call  print_string_z
+
+    ; Print: "Consonants: <value>\n"
+    mov   rdi, cons_msg
+    call  print_string_z
+    mov   rax, [cons_count]
+    mov   rdi, rax
+    mov   rsi, read_buffer
+    call  int_to_ascii
+    mov   rdi, read_buffer
+    call  print_string_z
+    ; newline
+    mov   rdi, newline
+    call  print_string_z
+
+    ; 5) Exit
+    mov   rax, 60      ; SYS_exit
+    xor   rdi, rdi
+    syscall
+
+; ------------------------------------------------------------------------------
+; file_open_error:
+; ------------------------------------------------------------------------------
+file_open_error:
+    ; Print a simple error message and exit(1)
+    ; We'll just print newline to separate from prompt
+    mov   rdi, newline
+    call  print_string_z
+
+    mov   rax, 60      ; SYS_exit
+    mov   rdi, 1       ; exit code = 1
+    syscall
+
+; ------------------------------------------------------------------------------
+; print_string:
+;   rdi -> buffer
+;   rsi -> length
+;   Writes to stdout
+; ------------------------------------------------------------------------------
+print_string:
+    mov   rax, 1       ; SYS_write
+    mov   rdi, 1       ; fd=stdout
+    syscall
+    ret
+
+; ------------------------------------------------------------------------------
+; print_string_z:
+;   rdi -> zero-terminated string
+;   Prints until the 0 byte
+; ------------------------------------------------------------------------------
+print_string_z:
+    push  rdi
+    call  c_strlen
+    mov   rdx, rax     ; length
+    pop   rdi
+    ; rdi = string, rdx = length
+    mov   rax, 1       ; SYS_write
+    mov   rsi, rdi     ; buffer
+    mov   rdi, 1       ; stdout
+    syscall
+    ret
+
+; ------------------------------------------------------------------------------
+; print_line:
+;   rdi -> zero-terminated string
+;   Print string then a newline
+; ------------------------------------------------------------------------------
+print_line:
+    push  rdi
+    call  c_strlen
+    mov   rdx, rax
+    pop   rdi
+    mov   rax, 1
+    mov   rsi, rdi
+    mov   rdi, 1
+    syscall
+    ; now print newline
+    mov   rdi, newline
+    call  print_string_z
+    ret
+
+; ------------------------------------------------------------------------------
+; read_line:
+;   Reads a line from stdin up to (rsi-1) bytes into [rdi].
+;   Removes trailing newline if present.
+;   Returns (in rax) the length of the string read (not counting null terminator).
+; ------------------------------------------------------------------------------
+read_line:
+    push  rbx
+
+    mov   rax, 0      ; SYS_read
+    mov   rdi, 0      ; fd=stdin
+    mov   rbx, rdi    ; we have to reorder registers carefully
+    ; Actually let's do a small approach:
+    ; rdi = 0 (stdin)
+    ; rsi = buffer
+    ; rdx = size
+    ; but "buffer" is in old rdi, size is in old rsi.
+    mov   rbx, rdi    ; not correct now, fix it:
+    ; We'll do:
+    ;   rbx = buffer pointer
+    ;   rcx = maxLen
+    ;   then reorder.
+    mov   rbx, rdi             ; old rdi=buffer
+    mov   rcx, rsi             ; old rsi=maxLen
+
+    xor   rdi, rdi             ; rdi=0 => stdin
+    mov   rsi, rbx             ; rsi= buffer
+    mov   rdx, rcx             ; rdx= maxLen
+    syscall
+
+    cmp   rax, 1
+    jl    .no_data
+
+    mov   r8, rax  ; number of bytes read
+    dec   r8
+    js    .no_data
+
+    ; if last char is newline, remove it
+    mov   r9, rbx
+    add   r9, r8
+    cmp   byte [r9], 10  ; '\n'?
+    jne   .add_null
+    mov   byte [r9], 0   ; remove newline
+    jmp   .done_line
+
+.add_null:
+    ; ensure space for null
+    ; if r8 < (rcx - 1), place null
+    mov   r10, rcx
+    dec   r10
+    cmp   r8, r10
+    jge   .done_line
+    ; safe to store a null
+    mov   byte [r9+1], 0
+
+.done_line:
+    inc   r8
+    mov   rax, r8
+    jmp   .restore
+
+.no_data:
+    xor   rax, rax
+
+.restore:
+    pop   rbx
+    ret
+
+; ------------------------------------------------------------------------------
+; c_strlen:
+;   rdi -> zero-terminated string
+;   returns length in rax
+; ------------------------------------------------------------------------------
+c_strlen:
+    xor   rax, rax
+.repeat:
+    cmp   byte [rdi + rax], 0
+    je    .done
+    inc   rax
+    jmp   .repeat
+.done:
+    ret
+
+; ------------------------------------------------------------------------------
+; int_to_ascii:
+;   Convert unsigned integer in rdi to a decimal string at [rsi].
+;   (No handling for negatives or extremely large 64-bit numbers beyond decimal digits.)
+;   The result is null-terminated in [rsi].
+; ------------------------------------------------------------------------------
+int_to_ascii:
+    push  rbx
+    push  rbp
+    push  r12
+    push  r13
+    push  r14
+    push  r15
+
+    mov   rax, rdi    ; the number
+    mov   rbx, rsi    ; the buffer
+    xor   r12, r12    ; digit count
+    cmp   rax, 0
+    jne   .convert
+    ; if 0, just "0\0"
+    mov   byte [rbx], '0'
+    mov   byte [rbx+1], 0
+    jmp   .done_ascii
+
+.convert:
+    .loop:
+        xor   rdx, rdx
+        mov   rcx, 10
+        div   rcx        ; rax / 10 => rax, remainder => rdx
+        add   rdx, '0'
+        mov   byte [rbx + r12], dl
+        inc   r12
+        cmp   rax, 0
+        jne   .loop
+
+    ; now reverse the digits
+    mov   r13, 0      ; start
+    dec   r12         ; last index
+.rev_loop:
+    cmp   r13, r12
+    jge   .finish_rev
+    mov   dl, [rbx + r13]
+    mov   dh, [rbx + r12]
+    mov   [rbx + r13], dh
+    mov   [rbx + r12], dl
+    inc   r13
+    dec   r12
+    jmp   .rev_loop
+
+.finish_rev:
+    ; find where we ended, place null
+    ; easiest is to find length via c_strlen again
+    push  rbx
+    call  c_strlen
+    pop   rbx
+    mov   byte [rbx + rax], 0
+
+.done_ascii:
+    pop   r15
+    pop   r14
+    pop   r13
+    pop   r12
+    pop   rbp
+    pop   rbx
+    ret

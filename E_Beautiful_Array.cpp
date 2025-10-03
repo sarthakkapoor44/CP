@@ -1,7 +1,9 @@
 ///////////////////////////////////////////////////// DYNATOS ////////////////////////////////////////////////////
 #include<bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
+#ifdef ONLINE_JUDGE
 #pragma GCC target("avx2,bmi,bmi2,popcnt,lzcnt")
+#endif
 using namespace std;
 //#include <ext/pb_ds/assoc_container.hpp>
 // using namespace __gnu_pbds;
@@ -54,6 +56,7 @@ int main() {
     // FOR SIEVE OF ERATOSTHENES - erat_snip;
     // FOR SPF - spf_snip
     // FOR BINARY_EXPONENTATION - binpow_snip
+    // FOR SEGMENT_TREE - seg_snip
     OPTIMIZE_IO // Optimize input/output (remove if using scanf and printf)
  
     int t=1;
@@ -63,65 +66,56 @@ int main() {
         ll n,k;
         cin>>n>>k;
         vll arr(n);
-        rep(i,n)cin>>arr[i];
-        map<ll,map<ll,ll>> mods;
+        map<ll,vll> nums;
         rep(i,n)
         {
-            int cnt = ++mods[arr[i]%k][arr[i]/k];
-            mods[arr[i]%k][arr[i]/k] = cnt%2;
-            if(mods[arr[i]%k][arr[i]/k]==0)mods[arr[i]%k].erase(arr[i]/k);
+            cin>>arr[i];
+            nums[(arr[i]%k)].push_back((arr[i]/k));
         }
-        ll oc =0;
-        bool fl =0;
-        ll ans  = 0;
-        for(auto x:mods)
+        ll odd = 0;
+        ll ans = 0;
+        for(auto x:nums)
         {
-            oc+= (x.second.size()%2);
-            if((oc && !(n%2)) ||  (oc>1 &&(n%2))){fl=1;break;}
-            vector<int> diff;
-            // cout<<x.first<<"->";
-            for(auto y: x.second)
+            vector<ll> temp = x.se;
+            odd+= (temp.size()%2);
+            srt(temp);
+            if((temp.size()%2))
             {
-                // cout<<y.first<<" ";
-                diff.push_back(y.first);
+                vll arr_new =  temp;
+                for(int i=0;i<temp.size();i+=2)
+                {
+                    arr_new[i]*=-1;
+                }
+                vll pre(temp.size()),suff(temp.size());
+                rep(i,temp.size())
+                {
+                    pre[i] = (i?pre[i-1]:0)+ arr_new[i];
+                }
+                forb(i,temp.size()-1,0)
+                {
+                    suff[i] = ((i+1<temp.size())?suff[i+1]:0) + (-arr_new[i]);
+                }
+                ll  min_val =INF;
+                for(int i=0;i<temp.size();i+=2)
+                {
+                    ll val = (i?pre[i-1]:0) + ((i+1<temp.size())?suff[i+1]:0);
+                    min_val = min(min_val,val);
+                }
+                ans+= min_val;
             }
-            // ce;
-            ll len = diff.size();
-            ll val = 0;
-            if(diff.size()%2)
-            {
-                ll val1=0;
-                vll prefix(len,0),suffix(len,0);
-                rep(i,len)
+            else{
+                rep(i,temp.size())
                 {
-                    if((i%2))prefix[i] = ( i?prefix[i-1]:0)+ diff[i];
-                    else prefix[i]=( i?prefix[i-1]:0)-diff[i];
-                }
-                forb(i,len-1,0)
-                {
-                    if((i%2))suffix[i] = ( (i+1<len)?suffix[i+1]:0)- diff[i];
-                    else suffix[i]=( (i+1<len)?suffix[i+1]:0)+ diff[i];
-                }
-                // for(auto p:prefix)cout<<p<<" ";ce;
-                // for(auto q:suffix)cout<<q<<" "; ce;
-                val=INF;
-                for(int i=0;i<len;i+=2)
-                {
-                    val = min(val,( (i?prefix[i-1]:0)) + ((i+1<len)?suffix[i+1]:0));
-                }
-             
-            }
-            else
-            {
-                for(int i=0;i<len;i+=2){
-                    val+= (diff[i+1]-diff[i]);
+                    if(!(i%2))ans+= (-temp[i]);
+                    else ans+= temp[i];
                 }
             }
-            ans+=val;
         }
-        if(fl)cout<<-1;
-        else{cout<<ans;}
-        ce;
+        if(odd>1){
+            ans=-1;
+        }
+        cout<<ans;ce;
+        
     }
 
     return 0;

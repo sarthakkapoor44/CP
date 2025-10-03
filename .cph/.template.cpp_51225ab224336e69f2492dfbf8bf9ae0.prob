@@ -1,0 +1,1 @@
+{"name":"Local: template","url":"/Users/apple/Desktop/CP/template.cpp","tests":[{"id":1759122120651,"input":"3\n2\n4 8\n2 6\n5 7","output":""},{"id":1759122148141,"input":"5\n2\n6 9\n2 3\n9 11\n1 5\n14 18","output":""}],"interactive":false,"memoryLimit":1024,"timeLimit":3000,"srcPath":"/Users/apple/Desktop/CP/template.cpp","group":"local","local":true}

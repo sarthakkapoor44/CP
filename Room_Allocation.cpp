@@ -1,44 +1,3 @@
-#include<bits/stdc++.h>
-using namespace std;
-typedef long long ll;
-#define INF 1e17
-int main(){
-    ll n;cin>>n;
-    vector<pair<ll,ll>> arr(n);
-    vector<ll> idx;
-    for(int i=0;i<n;i++){
-        cin>>arr[i].second>>arr[i].first;
-        idx.push_back(i);
-    }
-    sort(idx.begin(), idx.end(), [&](int a, int b) {
-        if(arr[a].first == arr[b].first)return arr[a].second< arr[b].second;
-        return arr[a].first < arr[b].first;
-    });
-    multiset<pair<ll,ll>> st;
-    ll cnt=1;
-    st.insert({arr[0].first,cnt});
-    vector<ll> ans(n);
-    ans[idx[0]] = 1;
-    for(int i=1;i<n;i++){
-        auto x = st.lower_bound({arr[i].second,-INF});
-        if(x!=st.begin()){
-            x--;
-            st.erase(x);
-            ll temp = x->second;
-            st.insert({arr[i].first,temp});
-            ans[idx[i]] = temp;
-        }
-        else {
-            cnt++;
-            st.insert({arr[i].first,cnt});
-            ans[idx[i]] = cnt;
-        }
-    }
-    cout<<cnt<<endl;
-    for(auto x: ans)cout<<x<<" ";
-    
-}
-
 ///////////////////////////////////////////////////// DYNATOS ////////////////////////////////////////////////////
 #include<bits/stdc++.h>
 #pragma GCC optimize("O3,unroll-loops")
@@ -57,15 +16,17 @@ typedef long long ll;
 #define srt(vect) sort(vect.begin(), vect.end())
 #define ce cout<<endl
 #define all(s) s.begin(), s.end()
-#define pyes cout<<"YES";
-#define pno cout<<"NO";
+#define pyes cout<<"YES"
+#define pno cout<<"NO"
 #define rep(i, n) for (ll i = 0; i < n; i++)
 #define forf(i, a, b) for (ll i = a; i < b; i++)
 #define forb(i, s, e) for (ll i = s; i >= e; i--)
 #define vp vector<pair<ll, ll> >
 #define vll vector<ll>
+#define pll pair<ll,ll>
 #define OPTIMIZE_IO  std::ios::sync_with_stdio(false);\
-    std::cin.tie(nullptr);
+    std::cin.tie(nullptr);\
+    std::cout.tie(nullptr);
 // typedef tree<int, null_type, less<int>, rb_tree_tag,
 //    tree_order_statistics_node_update> ost;
  
@@ -94,18 +55,21 @@ void out(vector<T> a)
  
 int main() {
     // FOR GCD - gcd snip
-    // FOR SIEVE OF ERATOSTHENES - erat_snip;
+    // FOR SIEVE OF ERATOSTHENES - erat_snip;fast_sieve
     // FOR SPF - spf_snip
     // FOR BINARY_EXPONENTATION - binpow_snip
+    // FOR SEGMENT_TREE - seg_snip
+    // FOR LCA - lca_snip
     OPTIMIZE_IO // Optimize input/output (remove if using scanf and printf)
- 
     int t=1;
-    cin>>t;
+    // cin>>t;
     while (t--)
     {	//Lesgooooooo!!!!
         ll n;
         cin>>n;
-         
+        vector<pair<ll,ll>> arr;
+        rep(i,n)cin>>arr[i].fi>>arr[i].se;
+        srt(arr);
         
     }
 

@@ -1,5 +1,9 @@
 ///////////////////////////////////////////////////// DYNATOS ////////////////////////////////////////////////////
 #include<bits/stdc++.h>
+#pragma GCC optimize("O3,unroll-loops")
+#ifdef ONLINE_JUDGE
+#pragma GCC target("avx2,bmi,bmi2,popcnt,lzcnt")
+#endif
 using namespace std;
 //#include <ext/pb_ds/assoc_container.hpp>
 // using namespace __gnu_pbds;
@@ -18,59 +22,91 @@ typedef long long ll;
 #define forf(i, a, b) for (ll i = a; i < b; i++)
 #define forb(i, s, e) for (ll i = s; i >= e; i--)
 #define vp vector<pair<ll, ll> >
-#define v vector<ll>
+#define vll vector<ll>
+#define OPTIMIZE_IO  std::ios::sync_with_stdio(false);\
+    std::cin.tie(nullptr);
 // typedef tree<int, null_type, less<int>, rb_tree_tag,
 //    tree_order_statistics_node_update> ost;
+ 
+#ifndef ONLINE_JUDGE
+#include "debug.cpp"
+#define debug(x...)               \
+    cerr << "[" << #x << "] = ["; \
+    _print(x)
+#else
+#define debug(x...)
+#endif
+ 
 const ll MODN = 1e9 + 7;
 const ll MAXN = 1000001;
 const ll modn = 998244353;
-
-// for sieve of eratosthenes
-// bool is_prime[MAXN];
-//void sieve_of_eratosthenes();
-
-// for spf
-// int spf[MAXN]; 
-// void sieve();
-
-//GCD
-// ll gcd(ll a, ll b);
-
+ 
+template <typename T>
+void out(vector<T> a)
+{
+    for (int i = 0; i < (int)a.size(); i++)
+    {
+        cout << a[i] << " ";
+    }
+    ce;
+}
+ 
 int main() {
-    // Optimize input/output (remove if using cin cout exclusively)
-    // gcd_snip //spf_snip // erat_snip
-    std::ios::sync_with_stdio(false);
-    std::cin.tie(nullptr);
-    
+    // FOR GCD - gcd snip
+    // FOR SIEVE OF ERATOSTHENES - erat_snip;
+    // FOR SPF - spf_snip
+    // FOR BINARY_EXPONENTATION - binpow_snip
+    // FOR SEGMENT_TREE - seg_snip
+    OPTIMIZE_IO // Optimize input/output (remove if using scanf and printf)
+ 
     int t=1;
     cin>>t;
     while (t--)
-    {   //Lesgooooooo!!!!
+    {	//Lesgooooooo!!!!
         ll n;
         cin>>n;
-        string s;
-        cin>>s;
-        ll ans  =-INF;
+        string s;cin>>s;
+        ll counter =0 ;
+        ll ans =1;
         forb(k,n,1)
         {
-            ll sum =0;
-            ll cq=1;
-            v arr(n+1,0);
+            ll cq= 1;
+            counter = 0 ;
+            vector<ll> arr(n+1);
+            string temp=s;
             rep(i,n)
             {
-                sum+=arr[i];
-                if((s[i]=='0' && (sum%2)==0) || (s[i]=='1' && (sum%2)))
+                counter+= arr[i];
+                if((counter%2)==1)
                 {
-                    if(i+k-1>=n){cq=0;break;}
-                    arr[i]+=1;
-                    sum+=1;
-                    arr[i+k]=-1;
+                    
+                    if(temp[i]=='1'){temp[i]='0';}
+                    else if(temp[i]=='0'){temp[i]='1';}
+                }
+                // cout<<i<<" "<<k<<" "<<s[i];ce;
+                if(temp[i]=='0')
+                {
+                
+                   counter++;
+                //    cout<<i<<" "<<k<<" "<<counter;ce;
+                   if(i+k<=n){arr[i+k]+= -1;}
+                   else {cq=0;break;}
+                    
                 }
             
+                // debug(i,k,arr,counter);
+                // counter += arr[i];
+            } 
+            // ce;
+            if(cq)
+            {
+                ans = k;
+                break;
             }
-            if(cq){ans=k;break;}
-        } 
+        }
+        // ce;
         cout<<ans;ce;
+        
     }
 
     return 0;
